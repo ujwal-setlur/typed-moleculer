@@ -3,17 +3,17 @@ import dCopy from 'deep-copy';
 
 type ActionSchemaNoCache = Pick<
   ActionSchema,
-    | 'name'
-    | 'visibility'
-    | 'params'
-    | 'service'
-    | 'handler'
-    | 'tracing'
-    | 'bulkhead'
-    | 'circuitBreaker'
-    | 'retryPolicy'
-    | 'fallback'
-    | 'hooks'
+  | 'name'
+  | 'visibility'
+  | 'params'
+  | 'service'
+  | 'handler'
+  | 'tracing'
+  | 'bulkhead'
+  | 'circuitBreaker'
+  | 'retryPolicy'
+  | 'fallback'
+  | 'hooks'
 > & { [key: string]: any };
 
 export type ActionOptions<T extends ParamsMeta = {}> = ActionSchemaNoCache & {
@@ -39,7 +39,7 @@ type CacheKeys<T extends Object | undefined> = T extends undefined
         : CacheKeys<T[P]>;
     };
 
-type Dict = object;// { [key: string]: any };
+type Dict = object; // { [key: string]: any };
 
 type ParamsMeta = { params?: Dict; meta?: Dict };
 
@@ -88,9 +88,7 @@ export function cacheObjectToKeysArray<T extends ParamsMeta>(args: {
   const cacheKeys: string[] = [];
 
   const paramsKeys = cacheKeysToKeysArray(args.params || {});
-  const metaKeys = cacheKeysToKeysArray(args.meta || {}).map(
-    key => `#${key}`
-  );
+  const metaKeys = cacheKeysToKeysArray(args.meta || {}).map(key => `#${key}`);
 
   cacheKeys.push(...paramsKeys, ...metaKeys);
 
@@ -105,7 +103,10 @@ export function Action<T extends ParamsMeta>(options: ActionOptions<T> = {}) {
     const optionsCopy = dCopy(options);
 
     if (typeof optionsCopy.cache === 'object') {
-      const cacheKeys = cacheObjectToKeysArray<T>({ meta: optionsCopy.cache.meta, params: optionsCopy.cache.params });
+      const cacheKeys = cacheObjectToKeysArray<T>({
+        meta: optionsCopy.cache.meta,
+        params: optionsCopy.cache.params
+      });
       ((optionsCopy.cache as any).keys as string[]) = cacheKeys;
 
       // To be compatible with original moleculer options
@@ -119,12 +120,13 @@ export function Action<T extends ParamsMeta>(options: ActionOptions<T> = {}) {
       delete optionsCopy.skipHandler;
     }
 
-    ((target as any).actions || ((target as any).actions = {}))[key] = optionsCopy
-      ? {
-          ...optionsCopy
-        }
-      : (optionsCopy as any)?.skipHandler
-      ? ''
-      : descriptor.value;
+    ((target as any).actions || ((target as any).actions = {}))[key] =
+      optionsCopy
+        ? {
+            ...optionsCopy
+          }
+        : (optionsCopy as any)?.skipHandler
+        ? ''
+        : descriptor.value;
   };
 }

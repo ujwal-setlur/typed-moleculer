@@ -1,6 +1,6 @@
-import { Service } from "../../src";
-import * as moleculer from "moleculer";
-import * as DbMixin from "moleculer-db";
+import { Service } from '../../src';
+import * as moleculer from 'moleculer';
+import * as DbMixin from 'moleculer-db';
 
 @Service({
   mixins: [DbMixin as any]

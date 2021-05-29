@@ -3,19 +3,19 @@ import { inspect } from 'util';
 import { Action, Service } from '../src';
 
 type Params = {
-  query: { 
-    aa: number,
+  query: {
+    aa: number;
     obj: {
-      sub: string,
-      arr: string[]
-    }
-  },
-  pagination: { page: number, pageLength: number },
+      sub: string;
+      arr: string[];
+    };
+  };
+  pagination: { page: number; pageLength: number };
   bool: boolean;
 };
 
 type Meta = {
-  auth: { userId: string }
+  auth: { userId: string };
 };
 
 const cacheA = {
@@ -37,19 +37,19 @@ const untypedKeys = ['aa.bb.cc', '#xx.yy.zz'];
 
 @Service()
 export default class TestServcie extends Moleculer.Service {
-  @Action<{ meta: Meta, params: Params }>({
+  @Action<{ meta: Meta; params: Params }>({
     cache: {
       ...cacheA,
       meta: { auth: { userId: true } },
       params: {
         pagination: { page: true, pageLength: true },
-        query: { aa: true, obj: { arr: true} },
+        query: { aa: true, obj: { arr: true } },
         bool: true
       }
     }
   })
   typedCache(ctx) {
-    return "Hello";
+    return 'Hello';
   }
 
   @Action({
@@ -59,28 +59,27 @@ export default class TestServcie extends Moleculer.Service {
     } as any
   })
   oldWayCache(ctx) {
-    return "Hello";
+    return 'Hello';
   }
 }
 
-describe("Action({ cache: ... })", () =>{
-  it("Dummy cache test", async () => {
-
-    const broker = new ServiceBroker({ logLevel: "warn" });
+describe('Action({ cache: ... })', () => {
+  it('Dummy cache test', async () => {
+    const broker = new ServiceBroker({ logLevel: 'warn' });
     const service = broker.createService(TestServcie);
-    
+
     const typedCache = (service.schema.actions?.typedCache as any).cache;
     const oldWayCache = (service.schema.actions?.oldWayCache as any).cache;
 
     expect(typedCache).toStrictEqual({
       ...cacheA,
       keys: [
-        "pagination.page",
-        "pagination.pageLength",
-        "query.aa",
-        "query.obj.arr",
-        "bool",
-        "#auth.userId",
+        'pagination.page',
+        'pagination.pageLength',
+        'query.aa',
+        'query.obj.arr',
+        'bool',
+        '#auth.userId'
       ]
     });
 
@@ -89,5 +88,5 @@ describe("Action({ cache: ... })", () =>{
       ...cacheB,
       keys: []
     });
-  })
-})
+  });
+});
