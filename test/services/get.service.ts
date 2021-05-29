@@ -2,10 +2,6 @@ import * as Moleculer from 'moleculer';
 import { Action, Method, Service } from '../../src';
 import { User } from './api.service';
 
-interface ChatsActionParams {
-  withUser: string;
-}
-
 export interface AuthMeta {
   user: User;
   $statusCode?: number;
@@ -24,14 +20,12 @@ export default class GetTest extends Moleculer.Service {
       withUser: 'string'
     }
   })
-  public async getModel(ctx: AuthContext<ChatsActionParams>) {
-    const { withUser } = ctx.params;
-    const fromUser = ctx.meta.user.id;
-    return this._getModel(withUser, fromUser);
+  public async getModel() {
+    return this._getModel();
   }
 
   @Method
-  private _getModel(withUser: string, fromUser: string): Promise<User> {
+  private _getModel(): Promise<User> {
     return Promise.resolve({ id: '5' });
   }
 

@@ -11,8 +11,8 @@ function isObject(value) {
 }
 
 export function omit(object: object, remove: string[]) {
-  let newObj = Object.assign({}, object);
-  for (let n of remove) delete newObj[n];
+  const newObj = Object.assign({}, object);
+  for (const n of remove) delete newObj[n];
   return newObj;
 }
 

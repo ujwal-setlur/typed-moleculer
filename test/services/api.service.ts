@@ -1,4 +1,4 @@
-import { IncomingMessage, ServerResponse } from 'http';
+import { IncomingMessage } from 'http';
 import * as Moleculer from 'moleculer';
 import { Method, Service } from '../../src';
 import * as ApiGateway from 'moleculer-web';
@@ -29,12 +29,11 @@ export default class Api extends Moleculer.Service {
   public async authenticate(
     ctx: Moleculer.Context,
     route: string,
-    req: IncomingMessage,
-    res: ServerResponse
+    req: IncomingMessage
   ) {
     const accessToken = req.headers.authorization;
     if (accessToken) {
-      const user = await this._getUserFromRemoterService(ctx, accessToken);
+      const user = await this._getUserFromRemoterService();
       if (user) {
         return Promise.resolve({ ...user.user, id: user.user.externalId });
       } else {
@@ -50,10 +49,7 @@ export default class Api extends Moleculer.Service {
   }
 
   @Method
-  private _getUserFromRemoterService(
-    ctx: Moleculer.Context,
-    accessToken
-  ): Promise<any> {
+  private _getUserFromRemoterService(): Promise<any> {
     return Promise.resolve({ user: {} });
   }
 }

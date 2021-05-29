@@ -10,7 +10,7 @@ export default class DemoController extends Moleculer.Service {
   @Action({
     rest: 'GET /welcome'
   })
-  welcome(ctx) {
+  welcome() {
     return 'Hello';
   }
 }

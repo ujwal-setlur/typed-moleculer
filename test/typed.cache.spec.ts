@@ -1,5 +1,4 @@
 import Moleculer, { ServiceBroker } from 'moleculer';
-import { inspect } from 'util';
 import { Action, Service } from '../src';
 
 type Params = {
@@ -48,7 +47,7 @@ export default class TestServcie extends Moleculer.Service {
       }
     }
   })
-  typedCache(ctx) {
+  typedCache() {
     return 'Hello';
   }
 
@@ -58,7 +57,7 @@ export default class TestServcie extends Moleculer.Service {
       keys: untypedKeys
     } as any
   })
-  oldWayCache(ctx) {
+  oldWayCache() {
     return 'Hello';
   }
 }

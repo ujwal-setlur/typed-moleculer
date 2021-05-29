@@ -86,7 +86,7 @@ const mockServiceBroker = new Object({ Promise });
 export function Service<T extends Options>(opts: T = {} as T): Function {
   const options = opts || ({} as Options);
   return function (constructor: Function) {
-    let base: ServiceSchema = {
+    const base: ServiceSchema = {
       name: '' // will be overridden
     };
     const _options = Object.assign({}, defaultServiceOptions, options);
@@ -111,20 +111,20 @@ export function Service<T extends Options>(opts: T = {} as T): Function {
           // Override properties defined in @Service
           const ServiceClass = new parentService.constructor(mockServiceBroker);
 
-          Object.getOwnPropertyNames(ServiceClass).forEach(function (key) {
+          Object.getOwnPropertyNames(ServiceClass).forEach(function (aKey) {
             if (
-              blacklist.indexOf(key) === -1 &&
-              !_.isFunction(ServiceClass[key])
+              blacklist.indexOf(aKey) === -1 &&
+              !_.isFunction(ServiceClass[aKey])
             ) {
-              base[key] = Object.getOwnPropertyDescriptor(
+              base[aKey] = Object.getOwnPropertyDescriptor(
                 ServiceClass,
-                key
+                aKey
               )!.value;
-              if (blacklist2.indexOf(key) === -1) {
+              if (blacklist2.indexOf(aKey) === -1) {
                 // Needed, otherwize if the service is used as a mixin, these variables will overwrite the toplevel's
-                vars[key] = Object.getOwnPropertyDescriptor(
+                vars[aKey] = Object.getOwnPropertyDescriptor(
                   ServiceClass,
-                  key
+                  aKey
                 )!.value;
               }
             }
@@ -141,8 +141,8 @@ export function Service<T extends Options>(opts: T = {} as T): Function {
           // Defining our 'own' created function
           bypass(obj, 'created', {
             value: function created(broker: ServiceBroker) {
-              for (let key in vars) {
-                this[key] = vars[key];
+              for (const aKey in vars) {
+                this[aKey] = vars[aKey];
               }
 
               // Check if user defined a created function, if so, we need to call it after ours.
