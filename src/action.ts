@@ -25,7 +25,7 @@ export type ActionOptions<T extends ParamsMeta = {}> = ActionSchemaNoCache & {
 
 type ActionCacheNoKeys = Omit<ActionCacheOptions, 'keys'>;
 
-type Primitive = boolean | number | string | Symbol;
+type Primitive = boolean | number | string | Symbol | undefined;
 
 type CacheKeys<T extends Object | undefined> = T extends undefined
   ? never

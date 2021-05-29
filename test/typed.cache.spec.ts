@@ -4,9 +4,11 @@ import { Action, Service } from '../src';
 type Params = {
   query: {
     aa: number;
+    bb?: string;
     obj: {
       sub: string;
       arr: string[];
+      cc?: number;
     };
   };
   pagination: { page: number; pageLength: number };
@@ -14,7 +16,7 @@ type Params = {
 };
 
 type Meta = {
-  auth: { userId: string };
+  auth?: { userId: string };
 };
 
 const cacheA = {
@@ -51,6 +53,21 @@ export default class TestServcie extends Moleculer.Service {
     return 'Hello';
   }
 
+  @Action<{ meta: Meta; params: Params }>({
+    cache: {
+      ...cacheA,
+      meta: { auth: { userId: true } },
+      params: {
+        pagination: { page: true, pageLength: true },
+        query: { aa: true, bb: true, obj: { arr: true, cc: true } },
+        bool: true
+      }
+    }
+  })
+  typedCacheWithOptionalKeys() {
+    return 'Hello';
+  }
+
   @Action({
     cache: {
       ...cacheB,
@@ -68,6 +85,9 @@ describe('Action({ cache: ... })', () => {
     const service = broker.createService(TestServcie);
 
     const typedCache = (service.schema.actions?.typedCache as any).cache;
+    const typedCacheWithOptionalKeys = (
+      service.schema.actions?.typedCacheWithOptionalKeys as any
+    ).cache;
     const oldWayCache = (service.schema.actions?.oldWayCache as any).cache;
 
     expect(typedCache).toStrictEqual({
@@ -77,6 +97,20 @@ describe('Action({ cache: ... })', () => {
         'pagination.pageLength',
         'query.aa',
         'query.obj.arr',
+        'bool',
+        '#auth.userId'
+      ]
+    });
+
+    expect(typedCacheWithOptionalKeys).toStrictEqual({
+      ...cacheA,
+      keys: [
+        'pagination.page',
+        'pagination.pageLength',
+        'query.aa',
+        'query.bb',
+        'query.obj.arr',
+        'query.obj.cc',
         'bool',
         '#auth.userId'
       ]
