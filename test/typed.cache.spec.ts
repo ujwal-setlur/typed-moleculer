@@ -69,8 +69,8 @@ describe("Action({ cache: ... })", () =>{
     const broker = new ServiceBroker({ logLevel: "warn" });
     const service = broker.createService(TestServcie);
     
-    const typedCache = (service.schema.actions.typedCache as any).cache;
-    const oldWayCache = (service.schema.actions.oldWayCache as any).cache;
+    const typedCache = (service.schema.actions?.typedCache as any).cache;
+    const oldWayCache = (service.schema.actions?.oldWayCache as any).cache;
 
     expect(typedCache).toStrictEqual({
       ...cacheA,

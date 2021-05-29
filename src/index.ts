@@ -66,7 +66,7 @@ export type CronJobOptions = {
 export function CronJob(options: CronJobOptions): MethodDecorator {
   return function CronJobDecorator(
     target: any,
-    key: string,
+    key: string | symbol,
     descriptor: PropertyDescriptor
   ) {
     (target.crons || (target.crons = [])).push({
@@ -153,7 +153,7 @@ export function Service<T extends Options>(opts: T = {} as T): Function {
                 Object.getOwnPropertyDescriptor(
                   parentService,
                   "created"
-                ).value.call(this, broker);
+                )?.value.call(this, broker);
               }
             },
             writable: true,
