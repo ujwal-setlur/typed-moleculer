@@ -9,10 +9,10 @@
     "format": "prettier --write \"**/*.{js,ts}\"",
     "lint": "eslint --fix \"**/*.{js,ts}\"",
     "build": "tsc",
-    "compile": "npm run clean && tsc && node dist/index.js",
+    "compile": "npm run clean && npm run build && node dist/index.js",
     "dev": "nodemon --delay 2000 -e ts --exec \"npm run compile\"",
     "test": "jest --coverage --forceExit --detectOpenHandles",
-    "preversion": "npm run lint && npm run tsc && npm run test",
+    "preversion": "npm run lint && npm run build && npm run test",
     "postversion": "git push && git push --follow-tags"
   },
   "author": "Wojciech Fiderek <wojciech.fiderek.dev@gmail.com> (fork of Colonelbundy <colonelbundy@gmail.com>)",
