@@ -1,5 +1,5 @@
 import { CustomService } from './CustomServiceFactory';
-import { Action, Service } from '../../src';
+import { Action, Service } from '../../src/decorators';
 
 @Service()
 export default class CustomTest extends CustomService {

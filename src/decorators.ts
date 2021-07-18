@@ -51,7 +51,7 @@ export function Event(options?: EventOptions) {
   };
 }
 
-export { Action, ActionOptions } from './action';
+export { Action, ActionOptions } from './action.decorator';
 
 // -------------------------------------------------
 

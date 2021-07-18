@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "es2018",
     "strict": true,
     "sourceMap": false,
     "module": "commonjs",
@@ -15,12 +15,8 @@
     "noLib": false,
     "preserveConstEnums": true,
     "suppressImplicitAnyIndexErrors": true,
-    "outDir": "dist",
-    "baseUrl": "./src/",
-    "paths": {
-      "*": ["src/*"]
-    }
+    "outDir": "./dist",
+    "rootDir": "./"
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "typings/main", "typings/main.d.ts"]
+  "exclude": ["node_modules", "dist"]
 }

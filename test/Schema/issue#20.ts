@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { Service, Action } from '../../src';
+import { Service, Action } from '../../src/decorators';
 import * as web from 'moleculer-web';
 import Moleculer = require('moleculer');
 

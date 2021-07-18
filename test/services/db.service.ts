@@ -1,4 +1,4 @@
-import { Service } from '../../src';
+import { Service } from '../../src/decorators';
 import * as moleculer from 'moleculer';
 import * as DbMixin from 'moleculer-db';
 

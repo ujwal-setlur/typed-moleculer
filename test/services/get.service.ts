@@ -1,5 +1,5 @@
 import * as Moleculer from 'moleculer';
-import { Action, Method, Service } from '../../src';
+import { Action, Method, Service } from '../../src/decorators';
 import { User } from './api.service';
 
 export interface AuthMeta {

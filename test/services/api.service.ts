@@ -1,6 +1,6 @@
 import { IncomingMessage } from 'http';
 import * as Moleculer from 'moleculer';
-import { Method, Service } from '../../src';
+import { Method, Service } from '../../src/decorators';
 import * as ApiGateway from 'moleculer-web';
 
 export interface User {

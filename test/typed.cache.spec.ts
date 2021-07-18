@@ -1,5 +1,5 @@
 import Moleculer, { ServiceBroker } from 'moleculer';
-import { Action, Service } from '../src';
+import { Action, Service } from '../src/decorators';
 
 type Params = {
   query: {
