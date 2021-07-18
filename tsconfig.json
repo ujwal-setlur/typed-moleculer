@@ -15,8 +15,7 @@
     "noLib": false,
     "preserveConstEnums": true,
     "suppressImplicitAnyIndexErrors": true,
-    "outDir": "./dist",
-    "rootDir": "./"
+    "outDir": "./dist"
   },
   "exclude": ["node_modules", "dist"]
 }

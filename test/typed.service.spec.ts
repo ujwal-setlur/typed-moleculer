@@ -1,14 +1,10 @@
 import { TypedServiceBroker } from '../index';
 import {
-  ServiceAction as Sample1Action,
-  ServiceEvent as Sample1Event,
-  ServiceName as Sample1Name
+  ServiceAction,
+  ServiceEvent,
+  ServiceName
 } from './services/typed.service.types';
 import typedService from './services/typed.service';
-
-type ServiceAction = Sample1Action;
-type ServiceEvent = Sample1Event;
-type ServiceName = Sample1Name;
 
 describe('typed service', () => {
   const broker: TypedServiceBroker<
