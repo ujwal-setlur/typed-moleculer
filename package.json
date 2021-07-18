@@ -33,7 +33,9 @@
   },
   "homepage": "https://github.com/bytetechnology/moleculer-decorators#readme",
   "dependencies": {
-    "deep-copy": "1.4.2",
+    "deep-copy": "^1.4.2"
+  },
+  "peerDependencies": {
     "moleculer": "^0.14.15"
   },
   "devDependencies": {
