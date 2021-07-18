@@ -7,7 +7,7 @@
   "scripts": {
     "clean": "rimraf dist/*",
     "format": "prettier --write \"**/*.{js,ts}\"",
-    "lint": "eslint --fix \"**/*.{js,ts}\"",
+    "lint": "eslint \"{src,{test,mocks}}/**/*.{js,ts}\"",
     "build": "tsc",
     "compile": "npm run clean && npm run build && node dist/index.js",
     "dev": "nodemon --delay 2000 -e ts --exec \"npm run compile\"",

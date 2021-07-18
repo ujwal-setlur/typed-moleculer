@@ -117,11 +117,13 @@ export type GenericEventWithoutPayload<N extends string> = {
   name: N;
 };
 
-export type GenericEventWithPayload<N extends string, P extends GenericObject> =
-  {
-    name: N;
-    payload: P;
-  };
+export type GenericEventWithPayload<
+  N extends string,
+  P extends GenericObject
+> = {
+  name: N;
+  payload: P;
+};
 
 // Our typed generic moleculer broker
 export class TypedServiceBroker<
