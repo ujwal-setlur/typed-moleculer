@@ -19,7 +19,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bytetechnology/moleculer-decorators.git"
+    "url": "git+https://github.com/bytetechnology/typed-moleculer.git"
   },
   "keywords": [
     "microservices",
@@ -29,9 +29,9 @@
     "moleculer"
   ],
   "bugs": {
-    "url": "https://github.com/bytetechnology/moleculer-decorators/issues"
+    "url": "https://github.com/bytetechnology/typed-moleculer/issues"
   },
-  "homepage": "https://github.com/bytetechnology/moleculer-decorators#readme",
+  "homepage": "https://github.com/bytetechnology/typed-moleculer#readme",
   "dependencies": {
     "deep-copy": "^1.4.2"
   },

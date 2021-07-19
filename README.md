@@ -31,10 +31,6 @@ export class MyService extends moleculer.Service {
 
 ![Moleculer logo](https://raw.githubusercontent.com/ice-services/moleculer/HEAD/docs/assets/logo.png)
 
-[![npm](https://img.shields.io/npm/v/moleculer-decorators.svg)](https://www.npmjs.com/package/moleculer-decorators)
-[![npm](https://img.shields.io/npm/dm/moleculer-decorators.svg)](https://www.npmjs.com/package/moleculer-decorators)
-[![GitHub issues](https://img.shields.io/github/issues/ColonelBundy/moleculer-decorators.svg)](https://github.com/ColonelBundy/moleculer-decorators/issues)
-[![GitHub license](https://img.shields.io/github/license/ColonelBundy/moleculer-decorators.svg)](https://github.com/ColonelBundy/moleculer-decorators/blob/master/LICENSE)
 [![Powered by moleculer](https://img.shields.io/badge/Powered%20by-Moleculer-green.svg?colorB=0e83cd)](http://moleculer.services/)
 
 # Moleculer Decorators
@@ -54,7 +50,7 @@ skipHandler: true; // false by default, this will let a mixin override the handl
 
 ```js
 const moleculer = require('moleculer');
-const { Service, Action, Event, Method } = require('moleculer-decorators');
+const { Service, Action, Event, Method } = require('typed-moleculer');
 const web = require('moleculer-web');
 const broker = new moleculer.ServiceBroker({
   logger: console,
@@ -159,7 +155,7 @@ module.exports = ServiceName;
 
 ```js
 const moleculer = require('moleculer');
-const { Service, Action } = require('moleculer-decorators');
+const { Service, Action } = require('typed-moleculer');
 
 // create new service factory, inheriting from moleculer native Service
 class CustomService extends moleculer.Service {
