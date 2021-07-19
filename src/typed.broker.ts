@@ -1,6 +1,6 @@
 /* eslint-disable no-use-before-define */
 // Moleculer micro-services framework
-import moleculer from 'moleculer';
+import { CallingOptions, ServiceBroker } from 'moleculer';
 
 // This is so that we are forcing an actual key/value object type
 type GenericObject = { [name: string]: any };
@@ -132,12 +132,12 @@ export class TypedServiceBroker<
   // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
   S extends string,
   M extends GenericObject = GenericObject
-> extends moleculer.ServiceBroker {
+> extends ServiceBroker {
   // Overload our call functions to type them
   public call<T extends ActionNameWithoutParameters<A>>(
     name: T,
     params?: undefined,
-    opts?: moleculer.CallingOptions & {
+    opts?: CallingOptions & {
       meta?: M;
     }
   ): Promise<ActionReturns<A, T>>;
@@ -146,7 +146,7 @@ export class TypedServiceBroker<
   public call<T extends ActionNameWithParameters<A>>(
     name: T,
     params: ActionParameters<A, T>,
-    opts?: moleculer.CallingOptions & {
+    opts?: CallingOptions & {
       meta?: M;
     }
   ): Promise<ActionReturns<A, T>>;
@@ -155,7 +155,7 @@ export class TypedServiceBroker<
   public call<T extends ActionName<A>>(
     name: T,
     params?: ActionParameters<A, T>,
-    opts?: moleculer.CallingOptions & {
+    opts?: CallingOptions & {
       meta?: M;
     }
   ): Promise<ActionReturns<A, T>> {
@@ -187,7 +187,7 @@ export class TypedServiceBroker<
   public emit<T extends EventNameWithPayload<E>>(
     name: T,
     payload: EventPayload<E, T>,
-    opts?: moleculer.GenericObject
+    opts?: GenericObject
   ): Promise<void>;
 
   // eslint-disable-next-line no-dupe-class-members
@@ -220,7 +220,7 @@ export class TypedServiceBroker<
   public broadcast<T extends EventNameWithPayload<E>>(
     name: T,
     payload: EventPayload<E, T>,
-    opts?: moleculer.GenericObject
+    opts?: GenericObject
   ): Promise<void>;
 
   // eslint-disable-next-line no-dupe-class-members
@@ -253,7 +253,7 @@ export class TypedServiceBroker<
   public broadcastLocal<T extends EventNameWithPayload<E>>(
     name: T,
     payload: EventPayload<E, T>,
-    opts?: moleculer.GenericObject
+    opts?: GenericObject
   ): Promise<void>;
 
   // eslint-disable-next-line no-dupe-class-members
