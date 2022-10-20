@@ -27,7 +27,7 @@ type ActionCacheNoKeys = Omit<ActionCacheOptions, 'keys'>;
 
 type Primitive = boolean | number | string | Symbol | undefined;
 
-type CacheKeys<T extends Object | undefined> = T extends undefined
+type CacheKeys<T> = T extends undefined
   ? never
   : {
       [P in keyof T]?: T[P] extends Primitive

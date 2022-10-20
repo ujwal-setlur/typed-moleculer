@@ -7,7 +7,7 @@ export interface User {
   id: string;
 }
 
-const { Errors } = ApiGateway;
+const { Errors } = ApiGateway.default;
 
 @Service({
   mixins: [ApiGateway],
