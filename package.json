@@ -19,7 +19,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bytetechnology/typed-moleculer.git"
+    "url": "git+https://github.com/ujwal-setlur/typed-moleculer.git"
   },
   "keywords": [
     "microservices",
