@@ -2,8 +2,7 @@ import { TypedServiceBroker } from '../index';
 import {
   ServiceAction,
   ServiceEvent,
-  ServiceName,
-  ServiceChannelEvent
+  ServiceName
 } from './services/typed.service.types';
 import typedService from './services/typed.service';
 
@@ -20,7 +19,6 @@ describe('typed service', () => {
   const broker: TypedServiceBroker<
     ServiceAction,
     ServiceEvent,
-    ServiceChannelEvent,
     ServiceName,
     {
       auth: {

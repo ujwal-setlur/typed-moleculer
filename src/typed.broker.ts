@@ -28,16 +28,6 @@ interface EventWithPayloadInterface extends EventInterface {
   payload: any;
 }
 
-// Channel event interfaces
-
-interface ChannelEventInterface {
-  name: string;
-  returns: unknown;
-}
-interface ChannelEventWithPayloadInterface extends ChannelEventInterface {
-  payload: any;
-}
-
 // Action type utilities
 
 // Get simple action type from list of action type
@@ -106,36 +96,6 @@ type EventNameWithPayload<E extends EventInterface> =
 
 // Channel event type utilities
 
-// Get simple channel event type from list of channel event types
-type ChannelEventWithoutPayload<C extends ChannelEventInterface> =
-  C extends ChannelEventWithPayloadInterface
-    ? never
-    : C extends ChannelEventInterface
-    ? Exclude<keyof C, keyof ChannelEventInterface> extends never
-      ? C
-      : never
-    : never;
-
-// Get payload event type from list of channel event types
-type ChannelEventWithPayload<C extends ChannelEventInterface> =
-  C extends ChannelEventWithPayloadInterface ? C : never;
-
-// Get the payload type for an EventWithPayload type
-type ChannelEventPayload<C, T> = C extends ChannelEventWithPayloadInterface
-  ? Extract<C, { name: T }>['payload']
-  : never;
-
-// Get channel event name type from a list of channel event types
-type ChannelEventName<C extends ChannelEventInterface> = C['name'];
-
-// Get channel event name types for channel event types without payload
-type ChannelEventNameWithoutPayload<C extends ChannelEventInterface> =
-  ChannelEventWithoutPayload<C>['name'];
-
-// Get channel event name types for channel event types with payload
-type ChannelEventNameWithPayload<C extends ChannelEventInterface> =
-  ChannelEventWithPayload<C>['name'];
-
 type ChannelPublishOptions = {
   raw?: boolean /* If truthy, the payload won't be serialized */;
   peristent?: boolean /* AMQP: If truthy, the message will survive broker restarts provided it’s in a queue that also survives restarts */;
@@ -179,30 +139,10 @@ export type GenericEventWithPayload<N extends string, P extends any> = {
   payload: P;
 };
 
-// Our main channel event type generics
-export type GenericChannelEventWithoutPayload<
-  N extends string,
-  R extends any
-> = {
-  name: N;
-  returns: R;
-};
-
-export type GenericChannelEventWithPayload<
-  N extends string,
-  P extends any,
-  R extends any
-> = {
-  name: N;
-  payload: P;
-  returns: R;
-};
-
 // Our typed generic moleculer broker
 export class TypedServiceBroker<
   A extends ActionInterface,
   E extends EventInterface,
-  C extends ChannelEventInterface,
   // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
   S extends string,
   M extends GenericObject = GenericObject
@@ -336,27 +276,22 @@ export class TypedServiceBroker<
   }
 
   // Define a function to send channel messages
-  // It can't be called the native sendToChannel since that seems to prevent the broker from initializing
   // eslint-disable-next-line no-dupe-class-members
-  public sendToChannel<T extends ChannelEventNameWithoutPayload<C>>(
+  public sendToChannel<T extends EventNameWithoutPayload<E>>(
     name: T,
     payload?: undefined,
     opts?: ChannelPublishOptions
   ): Promise<void>;
 
   // eslint-disable-next-line no-dupe-class-members
-  public sendToChannel<T extends ChannelEventNameWithPayload<C>>(
+  public sendToChannel<T extends EventNameWithPayload<E>>(
     name: T,
-    payload: ChannelEventPayload<C, T>,
+    payload: EventPayload<E, T>,
     opts?: ChannelPublishOptions
   ): Promise<void>;
 
   // eslint-disable-next-line no-dupe-class-members
-  public sendToChannel<T extends ChannelEventName<C>>(
-    name: T,
-    payload?: any,
-    opts?: any
-  ): Promise<void> {
+  public sendToChannel(name: any, payload?: any, opts?: any): Promise<void> {
     return this.sendChannelEvent(name, payload, opts); // we expect the channels middlware config to set sendMethodName = sendChannelEvent
   }
 }
