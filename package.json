@@ -1,6 +1,6 @@
 {
   "name": "typed-moleculer",
-  "version": "1.0.7",
+  "version": "2.0.0",
   "description": "Decorators and typed broker for moleculer. Fork/consolidation of moleculer-decorators@1.3.0 and moleculer-service-ts",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
