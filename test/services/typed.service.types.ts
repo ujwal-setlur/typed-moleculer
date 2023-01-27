@@ -2,7 +2,9 @@ import {
   GenericActionWithParameters,
   GenericActionWithoutParameters,
   GenericEventWithoutPayload,
-  GenericEventWithPayload
+  GenericEventWithPayload,
+  GenericChannelEventWithoutPayload,
+  GenericChannelEventWithPayload
 } from '../../index'; // eslint-disable-line import/extensions
 
 export type ServiceName = 'typedService';
@@ -24,3 +26,11 @@ export type ServiceAction =
 export type ServiceEvent =
   | GenericEventWithoutPayload<'typedService.event1'>
   | GenericEventWithPayload<'typedService.event2', { id: string }>;
+
+export type ServiceChannelEvent =
+  | GenericChannelEventWithoutPayload<'typedService.channel-event-1', void>
+  | GenericChannelEventWithPayload<
+      'typedService.channel-event-2',
+      string,
+      string
+    >;

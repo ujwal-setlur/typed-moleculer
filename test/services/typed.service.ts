@@ -1,8 +1,9 @@
-// Moleculer micro-services framework
+import util from 'util';
 import moleculer, { Errors } from 'moleculer';
-import { Action, Event, Method, Service } from '../../index';
+import { Action, Channel, Event, Method, Service } from '../../index';
 
 import { serviceName } from './typed.service.types';
+import { runInThisContext } from 'vm';
 
 const eventSchema = { id: 'string' };
 
@@ -90,6 +91,29 @@ class typedService extends moleculer.Service {
       `Got event ${eventName} from sender ${sender}; id: ${payload.id}`
     );
     this.event2TestReturn();
+  }
+
+  @Channel({ group: 'my-group' })
+  'typedService.channel-event-1'() {
+    this.channelTestReturn('Hello World');
+  }
+
+  @Channel({ group: 'my-group' })
+  'typedService.channel-event-2'(payload: string, raw: any): string {
+    this.channelTestReturn(payload);
+    this.channelHeaders(raw.headers);
+    return 'Hello';
+  }
+
+  @Method
+  channelTestReturn(message: string) {
+    // eslint-disable-line class-methods-use-this
+    this.logger.info(`Got channel message ${message}`);
+  }
+
+  @Method
+  channelHeaders(headers: any) {
+    this.logger.info(`Got headers: ${util.inspect(headers)}`);
   }
 }
 

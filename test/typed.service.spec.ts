@@ -2,14 +2,25 @@ import { TypedServiceBroker } from '../index';
 import {
   ServiceAction,
   ServiceEvent,
-  ServiceName
+  ServiceName,
+  ServiceChannelEvent
 } from './services/typed.service.types';
 import typedService from './services/typed.service';
+
+const ChannelMiddleware = require('@moleculer/channels').Middleware;
+
+const mw = ChannelMiddleware({
+  adapter: {
+    type: 'Fake'
+  },
+  sendMethodName: 'sendChannelEvent' // override the sendMethodName so that we can type sendToChannel()
+});
 
 describe('typed service', () => {
   const broker: TypedServiceBroker<
     ServiceAction,
     ServiceEvent,
+    ServiceChannelEvent,
     ServiceName,
     {
       auth: {
@@ -18,7 +29,11 @@ describe('typed service', () => {
         roles: string[];
       };
     }
-  > = new TypedServiceBroker({ logLevel: 'fatal' });
+  > = new TypedServiceBroker({
+    logLevel: 'fatal',
+    middlewares: [mw]
+  });
+
   const sampleService = broker.createService(typedService);
 
   beforeAll(async () => {
@@ -123,6 +138,65 @@ describe('typed service', () => {
         'typedService'
       );
       expect(sampleService.event2TestReturn).toBeCalledTimes(1);
+    });
+  });
+
+  // test channel messages
+  describe('Testing channel messages', () => {
+    it('Channel event without payload', async () => {
+      sampleService.channelTestReturn = jest.fn();
+      await broker.sendToChannel('typedService.channel-event-1');
+      expect(sampleService.channelTestReturn).toBeCalledTimes(1);
+      expect(sampleService.channelTestReturn).toHaveBeenCalledWith(
+        'Hello World'
+      );
+      sampleService.channelTestReturn.mockRestore();
+    });
+
+    it('Channel event with payload', async () => {
+      sampleService.channelTestReturn = jest.fn();
+      await broker.sendToChannel('typedService.channel-event-2', 'Hello World');
+      expect(sampleService.channelTestReturn).toBeCalledTimes(1);
+      expect(sampleService.channelTestReturn).toHaveBeenCalledWith(
+        'Hello World'
+      );
+      sampleService.channelTestReturn.mockRestore();
+    });
+
+    it('Channel event without payload, but with options', async () => {
+      sampleService.channelTestReturn = jest.fn();
+      await broker.sendToChannel('typedService.channel-event-1', undefined, {
+        ttl: 10000
+      });
+      expect(sampleService.channelTestReturn).toBeCalledTimes(1);
+      expect(sampleService.channelTestReturn).toHaveBeenCalledWith(
+        'Hello World'
+      );
+      sampleService.channelTestReturn.mockRestore();
+    });
+
+    it('Channel event with payload, but with headers', async () => {
+      sampleService.channelTestReturn = jest.fn();
+      sampleService.channelHeaders = jest.fn();
+      await broker.sendToChannel(
+        'typedService.channel-event-2',
+        'Hello World',
+        {
+          headers: {
+            foo: 'bar'
+          }
+        }
+      );
+      expect(sampleService.channelTestReturn).toBeCalledTimes(1);
+      expect(sampleService.channelHeaders).toBeCalledTimes(1);
+      expect(sampleService.channelTestReturn).toHaveBeenCalledWith(
+        'Hello World'
+      );
+      expect(sampleService.channelHeaders).toHaveBeenCalledWith({
+        foo: 'bar'
+      });
+      sampleService.channelTestReturn.mockRestore();
+      sampleService.channelHeaders.mockRestore();
     });
   });
 });

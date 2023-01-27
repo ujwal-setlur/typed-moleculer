@@ -2,8 +2,10 @@ import {
   ServiceSchema,
   ServiceBroker,
   ServiceEventHandler,
-  EventSchema
+  EventSchema,
+  GenericObject
 } from 'moleculer';
+
 import * as _ from './util';
 
 const blacklist = [
@@ -15,7 +17,8 @@ const blacklist = [
   'events',
   'broker',
   'logger',
-  'crons'
+  'crons',
+  'channels'
 ];
 const blacklist2 = ['metadata', 'settings', 'mixins', 'name', 'version'].concat(
   blacklist
@@ -43,6 +46,57 @@ export function Method(target, key: string, descriptor: PropertyDescriptor) {
 export function Event(options?: EventOptions) {
   return function (target, key: string, descriptor: PropertyDescriptor) {
     (target.events || (target.events = {}))[key] = options
+      ? {
+          ...options,
+          handler: descriptor.value
+        }
+      : descriptor.value;
+  };
+}
+
+// support for @moleculer/channels
+export type ChannelHandler = (
+  payload: any,
+  rawMessage: any
+) => void | Promise<void>;
+export interface ChannelOptions {
+  group?: string;
+  maxInFlight?: number;
+  maxRetries?: number;
+  deadLettering?: {
+    enabled?: boolean;
+    queueName?: string;
+  };
+  handler?: ChannelHandler; // not really used since we use the descriptor value below
+  redis?: {
+    startID?: string;
+    minIdleTime?: number;
+    claimInterval: number;
+    readTimeoutInterval: number;
+    processingAttemptsInterval?: number;
+  };
+  amqp?: {
+    queueOptions?: GenericObject;
+    exchangeOptions?: GenericObject;
+    consumerOptions?: GenericObject;
+  };
+  nats?: {
+    consumerOptions?: GenericObject;
+    streamConfig?: GenericObject;
+  };
+  kafka?: {
+    fromBeginning?: boolean;
+    partitionsConsumedConcurrently?: number;
+  };
+}
+
+export function Channel(options?: ChannelOptions): MethodDecorator {
+  return function ChannelDecorator(
+    target: any,
+    key: string | symbol,
+    descriptor: PropertyDescriptor
+  ) {
+    (target.channels || (target.channels = {}))[key] = options
       ? {
           ...options,
           handler: descriptor.value
@@ -181,7 +235,8 @@ export function Service<T extends Options>(opts: T = {} as T): Function {
         key === 'events' ||
         key === 'methods' ||
         key === 'actions' ||
-        key === 'crons'
+        key === 'crons' ||
+        key === 'channels'
       ) {
         base[key]
           ? Object.assign(base[key], descriptor.value)

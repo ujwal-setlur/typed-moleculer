@@ -1,6 +1,6 @@
 /* eslint-disable no-use-before-define */
 // Moleculer micro-services framework
-import { CallingOptions, ServiceBroker } from 'moleculer';
+import moleculer from 'moleculer';
 
 // This is so that we are forcing an actual key/value object type
 type GenericObject = { [name: string]: any };
@@ -25,7 +25,17 @@ interface EventInterface {
 }
 
 interface EventWithPayloadInterface extends EventInterface {
-  payload: GenericObject;
+  payload: any;
+}
+
+// Channel event interfaces
+
+interface ChannelEventInterface {
+  name: string;
+  returns: unknown;
+}
+interface ChannelEventWithPayloadInterface extends ChannelEventInterface {
+  payload: any;
 }
 
 // Action type utilities
@@ -54,7 +64,7 @@ type ActionReturns<A, T> = A extends ActionInterface
   ? Extract<A, { name: T }>['returns']
   : never;
 
-// Get action name type from a list of event types
+// Get action name type from a list of action types
 type ActionName<A extends ActionInterface> = A['name'];
 
 // Get action name types for event types without payload
@@ -77,7 +87,7 @@ type EventWithoutPayload<E extends EventInterface> =
       : never
     : never;
 
-// Get payload event type from list of event type
+// Get payload event type from list of event types
 type EventWithPayload<E extends EventInterface> =
   E extends EventWithPayloadInterface ? E : never;
 
@@ -93,6 +103,53 @@ type EventNameWithoutPayload<E extends EventInterface> =
 // Get event name types for event types with payload
 type EventNameWithPayload<E extends EventInterface> =
   EventWithPayload<E>['name'];
+
+// Channel event type utilities
+
+// Get simple channel event type from list of channel event types
+type ChannelEventWithoutPayload<C extends ChannelEventInterface> =
+  C extends ChannelEventWithPayloadInterface
+    ? never
+    : C extends ChannelEventInterface
+    ? Exclude<keyof C, keyof ChannelEventInterface> extends never
+      ? C
+      : never
+    : never;
+
+// Get payload event type from list of channel event types
+type ChannelEventWithPayload<C extends ChannelEventInterface> =
+  C extends ChannelEventWithPayloadInterface ? C : never;
+
+// Get the payload type for an EventWithPayload type
+type ChannelEventPayload<C, T> = C extends ChannelEventWithPayloadInterface
+  ? Extract<C, { name: T }>['payload']
+  : never;
+
+// Get channel event name type from a list of channel event types
+type ChannelEventName<C extends ChannelEventInterface> = C['name'];
+
+// Get channel event name types for channel event types without payload
+type ChannelEventNameWithoutPayload<C extends ChannelEventInterface> =
+  ChannelEventWithoutPayload<C>['name'];
+
+// Get channel event name types for channel event types with payload
+type ChannelEventNameWithPayload<C extends ChannelEventInterface> =
+  ChannelEventWithPayload<C>['name'];
+
+type ChannelPublishOptions = {
+  raw?: boolean /* If truthy, the payload won't be serialized */;
+  peristent?: boolean /* AMQP: If truthy, the message will survive broker restarts provided it’s in a queue that also survives restarts */;
+  ttl?: number /* AMQP: If supplied, the message will be discarded from a queue once it’s been there longer than the given number of milliseconds */;
+  priority?: number /* AMQP: Priority of the message */;
+  correlationId?: string /* AMQP: Request identifier */;
+  headers?: GenericObject /* Application specific headers to be carried along with the message content */;
+  routingKey?: GenericObject /* AMQP: The AMQP publish method's second argument. If you want to send the message into an external queue instead of exchange, set the channelName to "" and set the queue name to routingKey */;
+  key?: string /* Kafka: Key of Kafka message */;
+  partition?: string /* Kafka: Partition of Kafka message */;
+  acks?: number /* Kafka: Control the number of required acks */;
+  timeout?: number /* Kafka: The time to await a response in ms. Default: 30000 */;
+  compression?: any /* Kafka: Compression codec. Default: CompressionTypes.None */;
+};
 
 // Our exports
 
@@ -117,27 +174,44 @@ export type GenericEventWithoutPayload<N extends string> = {
   name: N;
 };
 
-export type GenericEventWithPayload<
+export type GenericEventWithPayload<N extends string, P extends any> = {
+  name: N;
+  payload: P;
+};
+
+// Our main channel event type generics
+export type GenericChannelEventWithoutPayload<
   N extends string,
-  P extends GenericObject
+  R extends any
+> = {
+  name: N;
+  returns: R;
+};
+
+export type GenericChannelEventWithPayload<
+  N extends string,
+  P extends any,
+  R extends any
 > = {
   name: N;
   payload: P;
+  returns: R;
 };
 
 // Our typed generic moleculer broker
 export class TypedServiceBroker<
   A extends ActionInterface,
   E extends EventInterface,
+  C extends ChannelEventInterface,
   // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
   S extends string,
   M extends GenericObject = GenericObject
-> extends ServiceBroker {
+> extends moleculer.ServiceBroker {
   // Overload our call functions to type them
   public call<T extends ActionNameWithoutParameters<A>>(
     name: T,
     params?: undefined,
-    opts?: CallingOptions & {
+    opts?: moleculer.CallingOptions & {
       meta?: M;
     }
   ): Promise<ActionReturns<A, T>>;
@@ -146,7 +220,7 @@ export class TypedServiceBroker<
   public call<T extends ActionNameWithParameters<A>>(
     name: T,
     params: ActionParameters<A, T>,
-    opts?: CallingOptions & {
+    opts?: moleculer.CallingOptions & {
       meta?: M;
     }
   ): Promise<ActionReturns<A, T>>;
@@ -155,7 +229,7 @@ export class TypedServiceBroker<
   public call<T extends ActionName<A>>(
     name: T,
     params?: ActionParameters<A, T>,
-    opts?: CallingOptions & {
+    opts?: moleculer.CallingOptions & {
       meta?: M;
     }
   ): Promise<ActionReturns<A, T>> {
@@ -187,7 +261,7 @@ export class TypedServiceBroker<
   public emit<T extends EventNameWithPayload<E>>(
     name: T,
     payload: EventPayload<E, T>,
-    opts?: GenericObject
+    opts?: moleculer.GenericObject
   ): Promise<void>;
 
   // eslint-disable-next-line no-dupe-class-members
@@ -220,7 +294,7 @@ export class TypedServiceBroker<
   public broadcast<T extends EventNameWithPayload<E>>(
     name: T,
     payload: EventPayload<E, T>,
-    opts?: GenericObject
+    opts?: moleculer.GenericObject
   ): Promise<void>;
 
   // eslint-disable-next-line no-dupe-class-members
@@ -253,11 +327,36 @@ export class TypedServiceBroker<
   public broadcastLocal<T extends EventNameWithPayload<E>>(
     name: T,
     payload: EventPayload<E, T>,
-    opts?: GenericObject
+    opts?: moleculer.GenericObject
   ): Promise<void>;
 
   // eslint-disable-next-line no-dupe-class-members
   public broadcastLocal(name: any, payload?: any, opts?: any): Promise<void> {
     return super.broadcastLocal(name, payload, opts);
+  }
+
+  // Define a function to send channel messages
+  // It can't be called the native sendToChannel since that seems to prevent the broker from initializing
+  // eslint-disable-next-line no-dupe-class-members
+  public sendToChannel<T extends ChannelEventNameWithoutPayload<C>>(
+    name: T,
+    payload?: undefined,
+    opts?: ChannelPublishOptions
+  ): Promise<void>;
+
+  // eslint-disable-next-line no-dupe-class-members
+  public sendToChannel<T extends ChannelEventNameWithPayload<C>>(
+    name: T,
+    payload: ChannelEventPayload<C, T>,
+    opts?: ChannelPublishOptions
+  ): Promise<void>;
+
+  // eslint-disable-next-line no-dupe-class-members
+  public sendToChannel<T extends ChannelEventName<C>>(
+    name: T,
+    payload?: any,
+    opts?: any
+  ): Promise<void> {
+    return this.sendChannelEvent(name, payload, opts); // we expect the channels middlware config to set sendMethodName = sendChannelEvent
   }
 }
