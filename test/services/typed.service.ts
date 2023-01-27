@@ -3,7 +3,6 @@ import moleculer, { Errors } from 'moleculer';
 import { Action, Channel, Event, Method, Service } from '../../index';
 
 import { serviceName } from './typed.service.types';
-import { runInThisContext } from 'vm';
 
 const eventSchema = { id: 'string' };
 
