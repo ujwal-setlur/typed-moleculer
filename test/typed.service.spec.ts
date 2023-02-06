@@ -1,3 +1,4 @@
+import { Context } from 'moleculer';
 import { TypedServiceBroker } from '../index';
 import {
   ServiceAction,
@@ -99,83 +100,77 @@ describe('typed service', () => {
 
   // test events
   describe('Testing events', () => {
-    beforeAll(() => {
-      sampleService.event1TestReturn = jest.fn();
-      sampleService.event2TestReturn = jest.fn();
-    });
-    afterAll(() => {
-      sampleService.event1TestReturn.mockRestore();
-      sampleService.event2TestReturn.mockRestore();
+    afterEach(() => {
+      jest.clearAllMocks();
     });
 
     it('Event1 without payload', () => {
+      const event1Spy = jest.spyOn(sampleService, 'event1TestReturn');
       broker.emit('typedService.event1', undefined, 'typedService');
-      expect(sampleService.event1TestReturn).toBeCalledTimes(1);
+      expect(event1Spy).toBeCalledTimes(1);
     });
 
     it('Event1 with payload', () => {
+      const event1Spy = jest.spyOn(sampleService, 'event1TestReturn');
       // We use emitlocalEventHandler because our typed broker won't allow us to send bad payloads :-)
       sampleService.emitLocalEventHandler(
         'typedService.event1',
         { foo: 'bar' },
         'typedService'
       );
-      expect(sampleService.event1TestReturn).toBeCalledTimes(1);
+      expect(event1Spy).toBeCalledTimes(0);
     });
 
     it('Event2 with good payload', () => {
+      const event2Spy = jest.spyOn(sampleService, 'event2TestReturn');
       broker.emit('typedService.event2', { id: '1234' }, 'typedService');
-      expect(sampleService.event2TestReturn).toBeCalledTimes(1);
+      expect(event2Spy).toBeCalledTimes(1);
     });
 
     it('Event2 with bad payload', () => {
+      const event2Spy = jest.spyOn(sampleService, 'event2TestReturn');
       // We use emitlocalEventHandler because our typed broker won't allow us to send bad payloads :-)
       sampleService.emitLocalEventHandler(
         'typedService.event2',
         { id: 1234 },
         'typedService'
       );
-      expect(sampleService.event2TestReturn).toBeCalledTimes(1);
+      expect(event2Spy).toBeCalledTimes(0);
     });
   });
 
   // test channel messages
   describe('Testing channel messages', () => {
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
     it('Channel event without payload', async () => {
-      sampleService.channelTestReturn = jest.fn();
+      const returnSpy = jest.spyOn(sampleService, 'channelTestReturn');
       await broker.sendToChannel('typedService.channel-event-1');
-      expect(sampleService.channelTestReturn).toBeCalledTimes(1);
-      expect(sampleService.channelTestReturn).toHaveBeenCalledWith(
-        'Hello World'
-      );
-      sampleService.channelTestReturn.mockRestore();
+      expect(returnSpy).toBeCalledTimes(1);
+      expect(returnSpy).toHaveBeenCalledWith('Hello World');
     });
 
     it('Channel event with payload', async () => {
-      sampleService.channelTestReturn = jest.fn();
+      const returnSpy = jest.spyOn(sampleService, 'channelTestReturn');
       await broker.sendToChannel('typedService.channel-event-2', 'Hello World');
-      expect(sampleService.channelTestReturn).toBeCalledTimes(1);
-      expect(sampleService.channelTestReturn).toHaveBeenCalledWith(
-        'Hello World'
-      );
-      sampleService.channelTestReturn.mockRestore();
+      expect(returnSpy).toBeCalledTimes(1);
+      expect(returnSpy).toHaveBeenCalledWith('Hello World');
     });
 
     it('Channel event without payload, but with options', async () => {
-      sampleService.channelTestReturn = jest.fn();
+      const returnSpy = jest.spyOn(sampleService, 'channelTestReturn');
       await broker.sendToChannel('typedService.channel-event-1', undefined, {
         ttl: 10000
       });
-      expect(sampleService.channelTestReturn).toBeCalledTimes(1);
-      expect(sampleService.channelTestReturn).toHaveBeenCalledWith(
-        'Hello World'
-      );
-      sampleService.channelTestReturn.mockRestore();
+      expect(returnSpy).toBeCalledTimes(1);
+      expect(returnSpy).toHaveBeenCalledWith('Hello World');
     });
 
     it('Channel event with payload, but with headers', async () => {
-      sampleService.channelTestReturn = jest.fn();
-      sampleService.channelHeaders = jest.fn();
+      const resturnSpy = jest.spyOn(sampleService, 'channelTestReturn');
+      const headersSpy = jest.spyOn(sampleService, 'channelHeaders');
       await broker.sendToChannel(
         'typedService.channel-event-2',
         'Hello World',
@@ -185,16 +180,45 @@ describe('typed service', () => {
           }
         }
       );
-      expect(sampleService.channelTestReturn).toBeCalledTimes(1);
-      expect(sampleService.channelHeaders).toBeCalledTimes(1);
-      expect(sampleService.channelTestReturn).toHaveBeenCalledWith(
-        'Hello World'
-      );
-      expect(sampleService.channelHeaders).toHaveBeenCalledWith({
+      expect(resturnSpy).toBeCalledTimes(1);
+      expect(headersSpy).toBeCalledTimes(1);
+      expect(resturnSpy).toHaveBeenCalledWith('Hello World');
+      expect(headersSpy).toHaveBeenCalledWith({
         foo: 'bar'
       });
-      sampleService.channelTestReturn.mockRestore();
-      sampleService.channelHeaders.mockRestore();
+    });
+
+    it('Channel event with context', async () => {
+      const contextSpy = jest.spyOn(sampleService, 'channelContextMeta');
+
+      const ctx = Context.create(
+        broker,
+        null as any,
+        { payload: 'Hello World' },
+        {
+          meta: {
+            auth: {
+              userId: '123'
+            }
+          }
+        }
+      );
+      await broker.sendToChannel(
+        'typedService.channel-with-context',
+        (ctx.params as any).payload,
+        {
+          ctx,
+          headers: {
+            foo: 'bar'
+          }
+        }
+      );
+      expect(contextSpy).toBeCalledTimes(1);
+      expect(contextSpy).toHaveBeenCalledWith({
+        auth: {
+          userId: '123'
+        }
+      });
     });
   });
 });

@@ -25,4 +25,5 @@ export type ServiceEvent =
   | GenericEventWithoutPayload<'typedService.event1'>
   | GenericEventWithPayload<'typedService.event2', { id: string }>
   | GenericEventWithoutPayload<'typedService.channel-event-1'>
-  | GenericEventWithPayload<'typedService.channel-event-2', string>;
+  | GenericEventWithPayload<'typedService.channel-event-2', string>
+  | GenericEventWithPayload<'typedService.channel-with-context', string>;

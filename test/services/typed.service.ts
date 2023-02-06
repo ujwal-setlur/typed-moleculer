@@ -104,6 +104,13 @@ class typedService extends moleculer.Service {
     return 'Hello';
   }
 
+  @Channel({ group: 'my-group', context: true })
+  'typedService.channel-with-context'(ctx: moleculer.Context): string {
+    this.logger.info(`Got channel message with context: ${util.inspect(ctx)}`);
+    this.channelContextMeta(ctx.meta);
+    return 'Hello';
+  }
+
   @Method
   channelTestReturn(message: string) {
     // eslint-disable-line class-methods-use-this
@@ -113,6 +120,11 @@ class typedService extends moleculer.Service {
   @Method
   channelHeaders(headers: any) {
     this.logger.info(`Got headers: ${util.inspect(headers)}`);
+  }
+
+  @Method
+  channelContextMeta(meta: any) {
+    this.logger.info(`Got meta: ${util.inspect(meta)}`);
   }
 }
 

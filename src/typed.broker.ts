@@ -102,6 +102,7 @@ type ChannelPublishOptions = {
   ttl?: number /* AMQP: If supplied, the message will be discarded from a queue once it’s been there longer than the given number of milliseconds */;
   priority?: number /* AMQP: Priority of the message */;
   correlationId?: string /* AMQP: Request identifier */;
+  ctx?: moleculer.Context;
   headers?: GenericObject /* Application specific headers to be carried along with the message content */;
   routingKey?: GenericObject /* AMQP: The AMQP publish method's second argument. If you want to send the message into an external queue instead of exchange, set the channelName to "" and set the queue name to routingKey */;
   key?: string /* Kafka: Key of Kafka message */;

@@ -60,6 +60,7 @@ export type ChannelHandler = (
   rawMessage: any
 ) => void | Promise<void>;
 export interface ChannelOptions {
+  context?: boolean;
   group?: string;
   maxInFlight?: number;
   maxRetries?: number;
