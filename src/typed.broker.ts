@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 /* eslint-disable no-use-before-define */
 // Moleculer micro-services framework
 import moleculer from 'moleculer';

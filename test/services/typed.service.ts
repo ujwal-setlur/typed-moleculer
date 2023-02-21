@@ -52,11 +52,8 @@ class typedService extends moleculer.Service {
   @Method
   event1TestReturn() {} // eslint-disable-line class-methods-use-this
 
-  @Event() 'typedService.event1'(
-    payload: never,
-    sender: string,
-    eventName: string
-  ) {
+  @Event()
+  'typedService.event1'(payload: never, sender: string, eventName: string) {
     if (payload) {
       this.logger.error(
         `Validation check failed! event ${eventName} does not take any payload!`
@@ -104,10 +101,34 @@ class typedService extends moleculer.Service {
     return 'Hello';
   }
 
-  @Channel({ group: 'my-group', context: true })
+  @Channel({ group: 'my-group' })
   'typedService.channel-with-context'(ctx: moleculer.Context): string {
     this.logger.info(`Got channel message with context: ${util.inspect(ctx)}`);
     this.channelContextMeta(ctx.meta);
+    return 'Hello';
+  }
+
+  @Channel({
+    group: 'traced-group',
+    tracing: {
+      spanName: (
+        ctx: moleculer.Context<{ id: string }, {}, moleculer.GenericObject>
+      ) => `My custom span: ${ctx.params.id}`,
+      tags: {
+        params: true,
+        meta: true
+      }
+    }
+  })
+  'typedService.channel-with-context-and-tracing'(
+    ctx: moleculer.Context
+  ): string {
+    this.logger.info(
+      `Got traced channel message with context: ${util.inspect(ctx)}`
+    );
+    if (ctx.span) {
+      this.channelContextTracing(ctx.span.name);
+    }
     return 'Hello';
   }
 
@@ -125,6 +146,11 @@ class typedService extends moleculer.Service {
   @Method
   channelContextMeta(meta: any) {
     this.logger.info(`Got meta: ${util.inspect(meta)}`);
+  }
+
+  @Method
+  channelContextTracing(name: string) {
+    this.logger.info(`Got trace span name: ${util.inspect(name)}`);
   }
 }
 

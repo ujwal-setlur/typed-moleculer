@@ -1,9 +1,13 @@
 import {
+  Context,
   ServiceSchema,
   ServiceBroker,
   ServiceEventHandler,
   EventSchema,
-  GenericObject
+  GenericObject,
+  TracingActionTags,
+  TracingEventTags,
+  TracingOptions
 } from 'moleculer';
 
 import * as _ from './util';
@@ -39,6 +43,13 @@ export interface EventOptions extends Partial<EventSchema> {
   handler?: ServiceEventHandler; // not really used
 }
 
+export interface TypedTracingOptions extends TracingOptions {
+  enabled?: boolean;
+  tags?: TracingActionTags | TracingEventTags;
+  spanName?: string | ((ctx: Context<any, object, GenericObject>) => string);
+  safetyTags?: boolean;
+}
+
 export function Method(target, key: string, descriptor: PropertyDescriptor) {
   (target.methods || (target.methods = {}))[key] = descriptor.value;
 }
@@ -68,6 +79,7 @@ export interface ChannelOptions {
     enabled?: boolean;
     queueName?: string;
   };
+  tracing?: TypedTracingOptions; // tracing options same as action tracing options. It works only with context: true
   handler?: ChannelHandler; // not really used since we use the descriptor value below
   redis?: {
     startID?: string;

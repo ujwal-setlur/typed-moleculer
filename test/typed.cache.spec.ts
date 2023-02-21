@@ -37,7 +37,7 @@ const cacheB = {
 const untypedKeys = ['aa.bb.cc', '#xx.yy.zz'];
 
 @Service()
-export default class TestServcie extends Moleculer.Service {
+export default class TestService extends Moleculer.Service {
   @Action<{ meta: Meta; params: Params }>({
     cache: {
       ...cacheA,
@@ -82,7 +82,7 @@ export default class TestServcie extends Moleculer.Service {
 describe('Action({ cache: ... })', () => {
   it('Dummy cache test', async () => {
     const broker = new ServiceBroker({ logLevel: 'warn' });
-    const service = broker.createService(TestServcie);
+    const service = broker.createService(TestService);
 
     const typedCache = (service.schema.actions?.typedCache as any).cache;
     const typedCacheWithOptionalKeys = (
