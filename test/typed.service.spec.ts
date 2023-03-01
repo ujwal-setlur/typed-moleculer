@@ -176,8 +176,7 @@ describe('Testing channel messages', () => {
   const channelMw = ChannelMiddleware({
     adapter: {
       type: 'Fake'
-    },
-    sendMethodName: 'sendChannelEvent' // override the sendMethodName so that we can type sendToChannel()
+    }
   });
 
   broker = new TypedServiceBroker({
@@ -203,21 +202,21 @@ describe('Testing channel messages', () => {
 
   it('Channel event without payload', async () => {
     const returnSpy = jest.spyOn(sampleService, 'channelTestReturn');
-    await broker.sendToChannel('typedService.channel-event-1');
+    await broker.message('typedService.channel-event-1');
     expect(returnSpy).toBeCalledTimes(1);
     expect(returnSpy).toHaveBeenCalledWith('Hello World');
   });
 
   it('Channel event with payload', async () => {
     const returnSpy = jest.spyOn(sampleService, 'channelTestReturn');
-    await broker.sendToChannel('typedService.channel-event-2', 'Hello World');
+    await broker.message('typedService.channel-event-2', 'Hello World');
     expect(returnSpy).toBeCalledTimes(1);
     expect(returnSpy).toHaveBeenCalledWith('Hello World');
   });
 
   it('Channel event without payload, but with options', async () => {
     const returnSpy = jest.spyOn(sampleService, 'channelTestReturn');
-    await broker.sendToChannel('typedService.channel-event-1', undefined, {
+    await broker.message('typedService.channel-event-1', undefined, {
       ttl: 10000
     });
     expect(returnSpy).toBeCalledTimes(1);
@@ -227,7 +226,7 @@ describe('Testing channel messages', () => {
   it('Channel event with payload, but with headers', async () => {
     const resturnSpy = jest.spyOn(sampleService, 'channelTestReturn');
     const headersSpy = jest.spyOn(sampleService, 'channelHeaders');
-    await broker.sendToChannel('typedService.channel-event-2', 'Hello World', {
+    await broker.message('typedService.channel-event-2', 'Hello World', {
       headers: {
         foo: 'bar'
       }
@@ -245,8 +244,7 @@ describe('Testing channel messages', () => {
       adapter: {
         type: 'Fake'
       },
-      context: true,
-      sendMethodName: 'sendChannelEvent' // override the sendMethodName so that we can type sendToChannel()
+      context: true
     });
 
     broker = new TypedServiceBroker({
@@ -284,7 +282,7 @@ describe('Testing channel messages', () => {
       }
     );
 
-    await broker.sendToChannel(
+    await broker.message(
       'typedService.channel-with-context',
       (ctx.params as any).payload,
       {
@@ -301,7 +299,7 @@ describe('Testing channel messages', () => {
       }
     });
 
-    await broker.sendToChannel(
+    await broker.message(
       'typedService.channel-with-context-and-tracing',
       ctx.params as object,
       {
