@@ -1,10 +1,7 @@
 /* istanbul ignore file */
 /* eslint-disable no-use-before-define */
 // Moleculer micro-services framework
-import moleculer from 'moleculer';
-
-// This is so that we are forcing an actual key/value object type
-type GenericObject = { [name: string]: any };
+import moleculer, { GenericObject } from 'moleculer';
 
 // Action interfaces
 
