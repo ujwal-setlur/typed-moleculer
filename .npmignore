@@ -3,3 +3,11 @@ test/
 node_modules/
 services/
 coverage/
+.eslintrc.json
+.gitignore
+.gitattributes
+.prettierrc
+*.png
+index.ts
+package-lock.json
+tsconfig.json
