@@ -202,21 +202,21 @@ describe('Testing channel messages', () => {
 
   it('Channel event without payload', async () => {
     const returnSpy = jest.spyOn(sampleService, 'channelTestReturn');
-    await broker.message('typedService.channel-event-1');
+    await broker.publish('typedService.channel-event-1');
     expect(returnSpy).toBeCalledTimes(1);
     expect(returnSpy).toHaveBeenCalledWith('Hello World');
   });
 
   it('Channel event with payload', async () => {
     const returnSpy = jest.spyOn(sampleService, 'channelTestReturn');
-    await broker.message('typedService.channel-event-2', 'Hello World');
+    await broker.publish('typedService.channel-event-2', 'Hello World');
     expect(returnSpy).toBeCalledTimes(1);
     expect(returnSpy).toHaveBeenCalledWith('Hello World');
   });
 
   it('Channel event without payload, but with options', async () => {
     const returnSpy = jest.spyOn(sampleService, 'channelTestReturn');
-    await broker.message('typedService.channel-event-1', undefined, {
+    await broker.publish('typedService.channel-event-1', undefined, {
       ttl: 10000
     });
     expect(returnSpy).toBeCalledTimes(1);
@@ -226,7 +226,7 @@ describe('Testing channel messages', () => {
   it('Channel event with payload, but with headers', async () => {
     const resturnSpy = jest.spyOn(sampleService, 'channelTestReturn');
     const headersSpy = jest.spyOn(sampleService, 'channelHeaders');
-    await broker.message('typedService.channel-event-2', 'Hello World', {
+    await broker.publish('typedService.channel-event-2', 'Hello World', {
       headers: {
         foo: 'bar'
       }
@@ -282,7 +282,7 @@ describe('Testing channel messages', () => {
       }
     );
 
-    await broker.message(
+    await broker.publish(
       'typedService.channel-with-context',
       (ctx.params as any).payload,
       {
@@ -299,7 +299,7 @@ describe('Testing channel messages', () => {
       }
     });
 
-    await broker.message(
+    await broker.publish(
       'typedService.channel-with-context-and-tracing',
       ctx.params as object,
       {

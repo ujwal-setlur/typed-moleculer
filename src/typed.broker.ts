@@ -277,21 +277,21 @@ export class TypedServiceBroker<
   // Define a function to send channel messages
   // This is the typed version of sendToChannel
   // eslint-disable-next-line no-dupe-class-members
-  public message<T extends EventNameWithoutPayload<E>>(
+  public publish<T extends EventNameWithoutPayload<E>>(
     name: T,
     payload?: undefined,
     opts?: ChannelPublishOptions
   ): Promise<void>;
 
   // eslint-disable-next-line no-dupe-class-members
-  public message<T extends EventNameWithPayload<E>>(
+  public publish<T extends EventNameWithPayload<E>>(
     name: T,
     payload: EventPayload<E, T>,
     opts?: ChannelPublishOptions
   ): Promise<void>;
 
   // eslint-disable-next-line no-dupe-class-members
-  public message(name: any, payload?: any, opts?: any): Promise<void> {
+  public publish(name: any, payload?: any, opts?: any): Promise<void> {
     // We expect the channels middlware config to set the default sendMethodName = sendToChannel
     // This will break if it is set to anything else. We cannot dynamically detect it
     return this.sendToChannel(name, payload, opts);
