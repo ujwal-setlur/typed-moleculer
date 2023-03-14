@@ -103,6 +103,10 @@ type ChannelPublishOptions = {
   ctx?: moleculer.Context;
   headers?: GenericObject /* Application specific headers to be carried along with the message content */;
   routingKey?: GenericObject /* AMQP: The AMQP publish method's second argument. If you want to send the message into an external queue instead of exchange, set the channelName to "" and set the queue name to routingKey */;
+  publishAssertExchange?: {
+    enabled?: boolean;
+    exchangeOptions: GenericObject;
+  };
   key?: string /* Kafka: Key of Kafka message */;
   partition?: string /* Kafka: Partition of Kafka message */;
   acks?: number /* Kafka: Control the number of required acks */;
