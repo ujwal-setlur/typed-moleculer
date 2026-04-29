@@ -234,9 +234,13 @@ describe('Testing channel messages', () => {
     expect(resturnSpy).toBeCalledTimes(1);
     expect(headersSpy).toBeCalledTimes(1);
     expect(resturnSpy).toHaveBeenCalledWith('Hello World');
-    expect(headersSpy).toHaveBeenCalledWith({
-      foo: 'bar'
-    });
+    // The TypedServiceBroker publish() injects channelName into a fresh
+    // ctx, which moleculer then serializes into outgoing-message headers
+    // ($meta/$level/$parentID/$requestID/$tracing). User-supplied headers
+    // are preserved alongside.
+    expect(headersSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ foo: 'bar' })
+    );
   });
 
   it('Channel event with context', async () => {
@@ -293,10 +297,13 @@ describe('Testing channel messages', () => {
       }
     );
     expect(contextMetaSpy).toBeCalledTimes(1);
+    // TypedServiceBroker publish() injects channelName into ctx.meta so
+    // downstream consumers can identify the channel.
     expect(contextMetaSpy).toHaveBeenCalledWith({
       auth: {
         userId: '123'
-      }
+      },
+      channelName: 'typedService.channel-with-context'
     });
 
     await broker.publish(

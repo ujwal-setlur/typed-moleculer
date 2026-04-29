@@ -1,7 +1,7 @@
 /* istanbul ignore file */
 /* eslint-disable no-use-before-define */
 // Moleculer micro-services framework
-import moleculer, { GenericObject } from 'moleculer';
+import moleculer, { Context, GenericObject } from 'moleculer';
 
 // Action interfaces
 
@@ -298,6 +298,19 @@ export class TypedServiceBroker<
   public publish(name: any, payload?: any, opts?: any): Promise<void> {
     // We expect the channels middlware config to set the default sendMethodName = sendToChannel
     // This will break if it is set to anything else. We cannot dynamically detect it
+
+    // inject channelName into context.meta
+    if (!opts) {
+      opts = {};
+    }
+    if (!opts.ctx) {
+      opts.ctx = Context.create(this, null as any);
+    }
+    if (!opts.ctx.meta) {
+      opts.ctx['meta'] = { channelName: name };
+    } else {
+      opts.ctx.meta['channelName'] = name;
+    }
     return this.sendToChannel(name, payload, opts);
   }
 }
