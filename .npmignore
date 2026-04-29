@@ -1,8 +1,8 @@
-src/
-test/
-node_modules/
-services/
-coverage/
+/src/
+/test/
+/node_modules/
+/services/
+/coverage/
 .eslintrc.json
 .gitignore
 .gitattributes
