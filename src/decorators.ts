@@ -75,6 +75,7 @@ export interface ChannelOptions {
   group?: string;
   maxInFlight?: number;
   maxRetries?: number;
+  retryInterval?: number; // interval between retries in milliseconds; amqp only
   deadLettering?: {
     enabled?: boolean;
     queueName?: string;
