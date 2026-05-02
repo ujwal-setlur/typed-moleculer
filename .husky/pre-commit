@@ -1,0 +1,6 @@
+STAGED=$(git diff --cached --name-only --diff-filter=d)
+npm run format
+npm run lint
+if [ -n "$STAGED" ]; then
+  echo "$STAGED" | xargs git add
+fi
