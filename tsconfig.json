@@ -1,21 +1,26 @@
 {
   "compilerOptions": {
-    "target": "es2018",
-    "strict": true,
-    "sourceMap": false,
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "isolatedModules": false,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
     "declaration": true,
-    "noImplicitAny": false,
-    "removeComments": true,
     "esModuleInterop": true,
-    "noLib": false,
-    "preserveConstEnums": true,
-    "suppressImplicitAnyIndexErrors": true,
-    "outDir": "./dist"
+    "noImplicitAny": true,
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "pretty": true,
+    "sourceMap": true,
+    "useDefineForClassFields": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "rootDir": "./",
+    "paths": {
+      "typed-moleculer": ["./index.ts"]
+    },
+    "types": ["node", "vitest/globals"],
+    "module": "es2022",
+    "target": "es2022",
+    "noEmit": true
   },
-  "exclude": ["node_modules", "dist", "test"]
+  "include": ["index.ts", "src/**/*", "test/**/*"],
+  "exclude": ["dist", "node_modules"]
 }

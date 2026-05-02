@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "import"],
+  "env": {
+    "node": true,
+    "es2022": true
+  },
+  "rules": {
+    "no-unused-vars": "off",
+    "typescript/no-unused-vars": "error",
+    "typescript/no-useless-constructor": "error",
+    "no-redeclare": "off",
+    "typescript/no-redeclare": "error",
+    "no-shadow": "off",
+    "typescript/no-shadow": "error",
+    "prefer-const": "error",
+    "no-console": "error",
+    "no-restricted-globals": [
+      "error",
+      {
+        "name": "jest",
+        "message": "Use vitest globals (vi, describe, it, expect) instead of jest"
+      }
+    ],
+    "spaced-comment": "error"
+  },
+  "ignorePatterns": ["node_modules", "dist"]
+}
