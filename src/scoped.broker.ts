@@ -30,6 +30,26 @@ import type { EmitOptions } from './typed.broker';
 import type { ChannelPublishOptions } from './types/channel.publish';
 
 /**
+ * Conditional rest tuples: see `typed.broker.ts` for the rationale —
+ * void-declared params/payloads collapse to a no-arg signature, others
+ * keep the `(payload, opts?)` shape.
+ */
+type ScopedCallArgs<T extends ActionName> =
+  ActionParams<T> extends void
+    ? [params?: undefined, opts?: CallingOptions]
+    : [params: ActionParams<T>, opts?: CallingOptions];
+
+type ScopedEmitArgs<S extends string, T extends EmittableBy<S>> =
+  EventPayload<T> extends void
+    ? [payload?: undefined, opts?: EmitOptions]
+    : [payload: EventPayload<T>, opts?: EmitOptions];
+
+type ScopedChannelArgs<S extends string, T extends PublishableBy<S>> =
+  ChannelPayload<T> extends void
+    ? [payload?: undefined, opts?: ChannelPublishOptions]
+    : [payload: ChannelPayload<T>, opts?: ChannelPublishOptions];
+
+/**
  * `ServiceBroker` with `call` typed against the registry and emit/
  * broadcast/broadcastLocal/publish narrowed to events/channels that
  * service `S` is authorized to emit/publish.
@@ -40,32 +60,27 @@ export type ScopedBroker<S extends string> = Omit<
 > & {
   call<T extends ActionName>(
     name: T,
-    params: ActionParams<T>,
-    opts?: CallingOptions
+    ...args: ScopedCallArgs<T>
   ): Promise<ActionReturns<T>>;
 } & {
   emit<T extends EmittableBy<S>>(
     name: T,
-    payload: EventPayload<T>,
-    opts?: EmitOptions
+    ...args: ScopedEmitArgs<S, T>
   ): Promise<void>;
 
   broadcast<T extends EmittableBy<S>>(
     name: T,
-    payload: EventPayload<T>,
-    opts?: EmitOptions
+    ...args: ScopedEmitArgs<S, T>
   ): Promise<void>;
 
   broadcastLocal<T extends EmittableBy<S>>(
     name: T,
-    payload: EventPayload<T>,
-    opts?: EmitOptions
+    ...args: ScopedEmitArgs<S, T>
   ): Promise<void>;
 
   publish<T extends PublishableBy<S>>(
     name: T,
-    payload: ChannelPayload<T>,
-    opts?: ChannelPublishOptions
+    ...args: ScopedChannelArgs<S, T>
   ): Promise<void>;
 };
 

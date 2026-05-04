@@ -6,7 +6,7 @@
 
 import { ServiceBroker } from 'moleculer';
 
-import { createScopedBroker } from '../../src/broker';
+import { createScopedBroker } from '../../src/scoped.broker';
 import { createTypedBroker } from '../../src/typed.broker';
 
 describe('broker factories', () => {

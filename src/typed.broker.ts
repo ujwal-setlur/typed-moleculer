@@ -42,6 +42,32 @@ export interface EmitOptions {
 }
 
 /**
+ * Conditional rest tuple: collapses to a no-arg signature when the
+ * action's params / event's payload / channel's payload is `void` (the
+ * moleculer 0.14 ergonomic of `broker.call(name)` / `broker.broadcast(name)`
+ * for void actions/events) and to the `(payload, opts?)` signature
+ * otherwise. Registry contributions that declare `params: undefined` /
+ * `payload: undefined` also satisfy `extends void` (undefined is a
+ * subtype of void), so both conventions work — but `void` is the
+ * recommended spelling in registry declarations: it reads as "no
+ * params/payload" rather than "the literal undefined value".
+ */
+type CallArgs<T extends ActionName> =
+  ActionParams<T> extends void
+    ? [params?: undefined, opts?: CallingOptions]
+    : [params: ActionParams<T>, opts?: CallingOptions];
+
+type EmitArgs<T extends EventName> =
+  EventPayload<T> extends void
+    ? [payload?: undefined, opts?: EmitOptions]
+    : [payload: EventPayload<T>, opts?: EmitOptions];
+
+type ChannelArgs<T extends ChannelName> =
+  ChannelPayload<T> extends void
+    ? [payload?: undefined, opts?: ChannelPublishOptions]
+    : [payload: ChannelPayload<T>, opts?: ChannelPublishOptions];
+
+/**
  * `ServiceBroker` with call/emit/broadcast/broadcastLocal/publish typed
  * strictly against the registry. No emit-ownership scoping — any
  * registered name accepted (subject to compilation-unit visibility).
@@ -52,32 +78,21 @@ export type TypedBroker = Omit<
 > & {
   call<T extends ActionName>(
     name: T,
-    params: ActionParams<T>,
-    opts?: CallingOptions
+    ...args: CallArgs<T>
   ): Promise<ActionReturns<T>>;
 
-  emit<T extends EventName>(
-    name: T,
-    payload: EventPayload<T>,
-    opts?: EmitOptions
-  ): Promise<void>;
+  emit<T extends EventName>(name: T, ...args: EmitArgs<T>): Promise<void>;
 
-  broadcast<T extends EventName>(
-    name: T,
-    payload: EventPayload<T>,
-    opts?: EmitOptions
-  ): Promise<void>;
+  broadcast<T extends EventName>(name: T, ...args: EmitArgs<T>): Promise<void>;
 
   broadcastLocal<T extends EventName>(
     name: T,
-    payload: EventPayload<T>,
-    opts?: EmitOptions
+    ...args: EmitArgs<T>
   ): Promise<void>;
 
   publish<T extends ChannelName>(
     name: T,
-    payload: ChannelPayload<T>,
-    opts?: ChannelPublishOptions
+    ...args: ChannelArgs<T>
   ): Promise<void>;
 };
 

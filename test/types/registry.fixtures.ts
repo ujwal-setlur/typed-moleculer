@@ -48,7 +48,7 @@ declare module 'typed-moleculer' {
   // Actions — globally callable; visibility scoped by import graph.
   interface TypedActions {
     'users.getUser': { params: GetUserParams; returns: User };
-    'users.ping': { params: undefined; returns: string };
+    'users.ping': { params: void; returns: string };
   }
 
   // Events — emit-ownership via emittedBy.
@@ -71,6 +71,13 @@ declare module 'typed-moleculer' {
       payload: Order;
       emittedBy: 'orders';
     };
+    // Void-payload event: parity with moleculer 0.14's `broadcast(name)`
+    // ergonomic. `cache.invalidate` is a typical protocol-style event:
+    // notifies listeners that something changed; carries no data.
+    'cache.invalidate': {
+      payload: void;
+      emittedBy: 'users' | 'orders' | 'inventory';
+    };
   }
 
   // Channels — publish-ownership via publishedBy.
@@ -83,6 +90,11 @@ declare module 'typed-moleculer' {
     'notifications.send': {
       payload: NotificationPayload;
       publishedBy: 'orders' | 'users';
+    };
+    // Void-payload channel: signal-only message (e.g. heartbeat).
+    'system.heartbeat': {
+      payload: void;
+      publishedBy: 'users' | 'orders';
     };
   }
 }

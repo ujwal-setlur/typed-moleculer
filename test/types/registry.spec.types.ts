@@ -37,7 +37,7 @@ describe('registry helper types', () => {
     });
 
     test('action with no params has params: undefined', () => {
-      expectTypeOf<ActionParams<'users.ping'>>().toEqualTypeOf<undefined>();
+      expectTypeOf<ActionParams<'users.ping'>>().toEqualTypeOf<void>();
       expectTypeOf<ActionReturns<'users.ping'>>().toEqualTypeOf<string>();
     });
   });
@@ -67,20 +67,22 @@ describe('registry helper types', () => {
     test('users can emit its own events (not inventory.adjusted)', () => {
       type UsersEmits = EmittableBy<'users'>;
       expectTypeOf<UsersEmits>().toEqualTypeOf<
-        'users.created' | 'users.deleted'
+        'users.created' | 'users.deleted' | 'cache.invalidate'
       >();
     });
 
     test('orders can emit its own events plus shared inventory.adjusted', () => {
       type OrdersEmits = EmittableBy<'orders'>;
       expectTypeOf<OrdersEmits>().toEqualTypeOf<
-        'orders.placed' | 'inventory.adjusted'
+        'orders.placed' | 'inventory.adjusted' | 'cache.invalidate'
       >();
     });
 
-    test('inventory can emit only inventory.adjusted', () => {
+    test('inventory can emit inventory.adjusted and cache.invalidate', () => {
       type InventoryEmits = EmittableBy<'inventory'>;
-      expectTypeOf<InventoryEmits>().toEqualTypeOf<'inventory.adjusted'>();
+      expectTypeOf<InventoryEmits>().toEqualTypeOf<
+        'inventory.adjusted' | 'cache.invalidate'
+      >();
     });
 
     test('returns (only listed on inventory.adjusted) emits only that', () => {
@@ -95,17 +97,17 @@ describe('registry helper types', () => {
   });
 
   describe('PublishableBy<S> — publish-ownership narrowing', () => {
-    test('users can publish to audit.event and notifications.send', () => {
+    test('users can publish to audit.event, notifications.send, system.heartbeat', () => {
       type UsersPubs = PublishableBy<'users'>;
       expectTypeOf<UsersPubs>().toEqualTypeOf<
-        'audit.event' | 'notifications.send'
+        'audit.event' | 'notifications.send' | 'system.heartbeat'
       >();
     });
 
-    test('orders can publish to both as well', () => {
+    test('orders can publish to all three as well', () => {
       type OrdersPubs = PublishableBy<'orders'>;
       expectTypeOf<OrdersPubs>().toEqualTypeOf<
-        'audit.event' | 'notifications.send'
+        'audit.event' | 'notifications.send' | 'system.heartbeat'
       >();
     });
 

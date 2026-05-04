@@ -45,8 +45,8 @@ export type {
 // Typed brokers — strict typing via Omit + intersection
 export { createTypedBroker } from './src/typed.broker';
 export type { EmitOptions, TypedBroker } from './src/typed.broker';
-export { createScopedBroker } from './src/broker';
-export type { ScopedBroker } from './src/broker';
+export { createScopedBroker } from './src/scoped.broker';
+export type { ScopedBroker } from './src/scoped.broker';
 
 // Typed Context — moleculer Context with broker re-typed strictly. Use
 // in handler signatures to get strict typing on `ctx.broker.X(...)`.

@@ -77,7 +77,7 @@ describe('ScopedContext<S> — emit-ownership on ctx.broker', () => {
 
   test('ctx.broker.call is unscoped — any registered action', async () => {
     void (await ctx.broker.call('users.getUser', { id: 'u1' }));
-    void (await ctx.broker.call('users.ping', undefined));
+    void (await ctx.broker.call('users.ping'));
   });
 
   test('ctx.broker.publish enforces publishedBy', () => {

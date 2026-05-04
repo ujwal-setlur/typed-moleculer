@@ -27,10 +27,18 @@ describe('TypedBroker — strict typing on call/emit/broadcast/publish', () => {
     void _check;
   });
 
-  test('call: action with no params accepts undefined', async () => {
-    const result = await broker.call('users.ping', undefined);
-    const _check: typeof result extends string ? true : false = true;
-    void _check;
+  test('call: void-params action accepts no params arg (or undefined)', async () => {
+    const r1 = await broker.call('users.ping');
+    const r2 = await broker.call('users.ping', undefined);
+    const _check1: typeof r1 extends string ? true : false = true;
+    const _check2: typeof r2 extends string ? true : false = true;
+    void _check1;
+    void _check2;
+  });
+
+  test('call: payload-bearing action still requires params', () => {
+    // @ts-expect-error — users.getUser has real params, must pass them
+    void broker.call('users.getUser');
   });
 
   test('call: rejects unknown action', () => {
@@ -73,6 +81,29 @@ describe('TypedBroker — strict typing on call/emit/broadcast/publish', () => {
       email: 'a@b.c',
       name: 'A'
     });
+  });
+
+  test('emit/broadcast: void-payload event accepts no payload arg', () => {
+    void broker.emit('cache.invalidate');
+    void broker.broadcast('cache.invalidate');
+    void broker.broadcastLocal('cache.invalidate');
+    // Optional opts still allowed.
+    void broker.broadcast('cache.invalidate', undefined, { groups: ['g1'] });
+  });
+
+  test('emit: payload still required for non-void events', () => {
+    // @ts-expect-error — users.created has a real payload, must pass it
+    void broker.emit('users.created');
+  });
+
+  test('publish: void-payload channel accepts no payload arg', () => {
+    void broker.publish('system.heartbeat');
+    void broker.publish('system.heartbeat', undefined, { persistent: true });
+  });
+
+  test('publish: payload still required for non-void channels', () => {
+    // @ts-expect-error — audit.event has a real payload, must pass it
+    void broker.publish('audit.event');
   });
 
   test('publish: registered channel + correct payload', () => {
@@ -144,9 +175,15 @@ describe('ScopedBroker<S> — emit-ownership narrowing', () => {
       });
     });
 
+    test('users can emit/publish void-payload events with no payload arg', () => {
+      void broker.emit('cache.invalidate');
+      void broker.broadcast('cache.invalidate');
+      void broker.publish('system.heartbeat');
+    });
+
     test('call is unscoped — users can call any registered action', async () => {
       void (await broker.call('users.getUser', { id: 'u1' }));
-      void (await broker.call('users.ping', undefined));
+      void (await broker.call('users.ping'));
     });
 
     test('createScopedBroker returns a ScopedBroker<S>', () => {

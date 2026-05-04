@@ -16,7 +16,7 @@
 
 import type { Context } from 'moleculer';
 
-import type { ScopedBroker } from './broker';
+import type { ScopedBroker } from './scoped.broker';
 import type { TypedBroker } from './typed.broker';
 
 /**
