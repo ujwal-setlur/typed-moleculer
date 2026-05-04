@@ -4,7 +4,7 @@
 
 `broker.call`, `broker.emit`, `broker.broadcast`, and `broker.publish`
 in stock Moleculer are loosely typed (`string`, `any`). Wrong action
-names, wrong payload shapes, and wrong return types all sail through
+names, wrong payload shapes, wrong return types — all sail through
 TypeScript and surface as runtime failures.
 
 `typed-moleculer` provides:
@@ -12,23 +12,25 @@ TypeScript and surface as runtime failures.
 - A **registry pattern** for declaring your actions, events, and
   channels via TypeScript interface merging — distributed across your
   codebase, scoped by your import graph.
-- A **`TypedBroker`** view that strictly types `call` / `emit` /
-  `broadcast` / `broadcastLocal` / `publish` against the registry.
-- A **`ScopedBroker<S>`** view that adds **emit-ownership enforcement**:
-  events and channels declare which services are authorized to
-  emit/publish them, and the broker for service `S` only accepts those.
+- A **`TypedBroker<S>`** view with strict typing on `call` / `emit` /
+  `broadcast` / `broadcastLocal` / `publish` against the registry,
+  narrowed by service-identity authorization (`callableBy` /
+  `emittedBy` / `publishedBy`).
+- **`TypedDeliverables`** — sugar for entries delivered as both event
+  AND channel (for the durability-fallback pattern: try `publish`,
+  catch and `emit`).
 - **Class-based service decorators** (`@Service`, `@Action`, `@Event`,
   `@Channel`, `@Method`, `@CronJob`) that compile down to a clean
   Moleculer `ServiceSchema`.
 
 ```ts
-import { createScopedBroker } from 'typed-moleculer';
+import { createTypedBroker } from 'typed-moleculer';
 import { ServiceBroker } from 'moleculer';
 
-const broker = createScopedBroker<'orders'>(new ServiceBroker(opts));
+const broker = createTypedBroker<'orders'>(new ServiceBroker(opts));
 
 await broker.call('users.getUser', { id: 'u1' });   // ✓ params + return typed
-broker.emit('orders.placed', payload);              // ✓ authorized
+broker.emit('orders.placed', payload);              // ✓ orders authorized to emit
 broker.emit('users.created', payload);              // ✗ TS error: not authorized
 broker.call('does.not.exist', {});                  // ✗ TS error: unknown action
 ```
@@ -64,9 +66,9 @@ npm install moleculer
 
 ## The registry pattern
 
-The core of typed-moleculer is three open interfaces — `TypedActions`,
-`TypedEvents`, `TypedChannels` — that you populate via TypeScript
-[interface merging](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation).
+The core of typed-moleculer is four open interfaces — `TypedActions`,
+`TypedEvents`, `TypedChannels`, `TypedDeliverables` — that you populate
+via TypeScript [interface merging](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation).
 Anywhere in your project (typically next to where you define the related
 types), add a `declare module 'typed-moleculer'` block:
 
@@ -84,11 +86,19 @@ declare module 'typed-moleculer' {
   interface TypedActions {
     'users.getUser': { params: { id: string }; returns: User };
     'users.create': { params: Omit<User, 'id'>; returns: User };
+    // Optional callableBy: only listed services may call this action.
+    'users.adminTask': {
+      params: { taskId: string };
+      returns: void;
+      callableBy: 'users' | 'admin';
+    };
   }
 
   interface TypedEvents {
     'users.created': { payload: User; emittedBy: 'users' };
     'users.deleted': { payload: { id: string }; emittedBy: 'users' };
+    // No emittedBy — anyone may emit.
+    'metrics.tick': { payload: void };
   }
 
   interface TypedChannels {
@@ -108,164 +118,164 @@ can't call) `users.*` actions.
 
 ### Entry shapes
 
+All authorization fields are **optional** — omit them to mean "anyone
+in scope may use this entry."
+
 ```ts
 // Action — strict on params + returns
 'users.getUser': { params: GetUserParams; returns: User };
 
-// Action with no params
-'users.ping': { params: undefined; returns: string };
+// Action with no params (use `void`, not `undefined`)
+'users.ping': { params: void; returns: string };
+
+// Action restricted to specific callers
+'users.adminTask': {
+  params: AdminTaskParams;
+  returns: void;
+  callableBy: 'users' | 'admin';
+};
 
 // Event — strict on payload + authorized emitters
 'users.created': { payload: User; emittedBy: 'users' };
 
-// Multi-emitter event (union)
+// Multi-emitter event
 'inventory.adjusted': {
   payload: InventoryAdjusted;
   emittedBy: 'orders' | 'returns' | 'inventory';
 };
+
+// Event without emittedBy — unrestricted
+'metrics.tick': { payload: void };
 
 // Channel — strict on payload + authorized publishers
 'audit.event': {
   payload: AuditEvent;
   publishedBy: 'users' | 'orders';
 };
+
+// Channel without publishedBy — unrestricted
+'metrics.report': { payload: { metric: string; value: number } };
 ```
 
-`emittedBy` and `publishedBy` are string-literal unions of the service
-names authorized to emit/publish. The owning module is the single source
-of truth for both shape and authorization.
+`callableBy` / `emittedBy` / `publishedBy` are string-literal unions of
+the service names authorized to call/emit/publish. The owning module
+is the single source of truth for both shape and authorization.
+
+### `TypedDeliverables` — entries delivered as both event AND channel
+
+A common pattern with channel-based messaging is the **durability
+fallback**: a sender tries `broker.publish` first; on AMQP failure,
+falls back to `broker.emit`. The receiver listens on both `@Channel`
+and `@Event` for the same name.
+
+Without a separate registry, you'd declare the entry twice — once in
+`TypedEvents` (with `emittedBy`) and once in `TypedChannels` (with
+`publishedBy`). `TypedDeliverables` lets you write it once:
+
+```ts
+declare module 'typed-moleculer' {
+  interface TypedDeliverables {
+    'orders.placed': {
+      payload: Order;
+      emittedBy: 'orders' | 'returns';
+      publishedBy: 'orders' | 'returns';
+    };
+  }
+}
+```
+
+`EventName` / `ChannelName` traverse both `Typed{Events,Channels}` and
+`TypedDeliverables`, so the deliverable name shows up on `broker.emit`
+*and* on `broker.publish` — preserving per-method narrowing (e.g. a
+publish-only entry declared in `TypedChannels` is still rejected on
+`emit`).
+
+The `emittedBy` / `publishedBy` lists can differ if the asymmetry is
+real; in typical durability-fallback usage they're the same.
 
 ---
 
-## The two broker views
+## `TypedBroker<S>`
 
 typed-moleculer doesn't replace Moleculer's `ServiceBroker` — it
-provides typed *views* of it. Two are exported:
-
-### `TypedBroker`
-
-Strict typing on `call`/`emit`/`broadcast`/`broadcastLocal`/`publish`,
-no service-identity scoping. Any registered name accepted.
+provides a typed *view* of it. One type, parameterized by service
+identity:
 
 ```ts
 import { createTypedBroker, type TypedBroker } from 'typed-moleculer';
 import { ServiceBroker } from 'moleculer';
 
-const broker: TypedBroker = createTypedBroker(new ServiceBroker(opts));
+const broker: TypedBroker<'users'> = createTypedBroker<'users'>(
+  new ServiceBroker(opts)
+);
 
 const user = await broker.call('users.getUser', { id: 'u1' });
 //    ^? User
 
-broker.emit('users.created', userObj);    // ✓
-broker.publish('audit.event', auditObj);  // ✓
-broker.call('does.not.exist', {});        // ✗ TS error
-broker.emit('users.created', { wrong });  // ✗ TS error: bad payload
+broker.emit('users.created', userObj);    // ✓ users authorized
+broker.emit('orders.placed', orderObj);   // ✗ TS error: emittedBy='orders' excludes 'users'
+broker.publish('audit.event', auditObj);  // ✓ users in publishedBy
+broker.call('users.adminTask', task);     // ✓ users in callableBy
+broker.call('does.not.exist', {});        // ✗ TS error: unknown action
 ```
 
-### `ScopedBroker<S>`
+The `S extends string` generic is the broker's identity badge.
+Authorization on each method is checked via the corresponding registry
+helper:
 
-Same strict typing as `TypedBroker`, *plus* emit-ownership: `emit` /
-`broadcast` / `broadcastLocal` / `publish` are narrowed to entries whose
-`emittedBy` / `publishedBy` includes the service identity `S`. `call`
-remains unscoped (any service can call any action).
+| Method | Constraint |
+|---|---|
+| `broker.call(name, ...)` | `name extends CallableBy<S>` |
+| `broker.emit(name, ...)` | `name extends EmittableBy<S>` |
+| `broker.broadcast(name, ...)` / `broadcastLocal(name, ...)` | same as emit |
+| `broker.publish(name, ...)` | `name extends PublishableBy<S>` |
+
+Entries with their authorization field absent are unrestricted — any
+`S` may use them. So scoping kicks in only where the registry
+contributor has expressed a restriction.
+
+### Opting out of scoping (`<any>`)
+
+There's no default for `S` — consumers must pass an explicit identity.
+Tests and unscoped tooling can pass `<any>` deliberately to opt out:
 
 ```ts
-import { createScopedBroker, type ScopedBroker } from 'typed-moleculer';
-
-const broker: ScopedBroker<'users'> = createScopedBroker<'users'>(new ServiceBroker(opts));
-
-broker.emit('users.created', userObj);     // ✓ users authorized
-broker.emit('orders.placed', orderObj);    // ✗ TS error: orders.placed emittedBy='orders'
-broker.publish('audit.event', auditObj);   // ✓ users in publishedBy union
-broker.publish('orders.outbound', x);      // ✗ TS error if orders.outbound publishedBy excludes users
+const broker = createTypedBroker<any>(new ServiceBroker(opts));
+// ↑ unscoped: every authorization check passes
 ```
 
-### Which to use?
+`any extends X` is truthy in conditional types, so `CallableBy<any>` =
+all action names, `EmittableBy<any>` = all event names, etc. The result
+is full registry visibility without any narrowing — equivalent to the
+old "TypedBroker" view in 4.x.
 
-The two views differ only in whether **emit-ownership** is enforced.
-Both produce identical strictness on action/event/channel names and
-payload shapes; `ScopedBroker<S>` additionally narrows `emit` /
-`broadcast` / `broadcastLocal` / `publish` to entries whose
-`emittedBy` / `publishedBy` includes the service identity `S`. `call`
-is not affected — both views allow calling any registered action.
+The choice is greppable: `TypedBroker<any>` stands out in code review
+as a deliberate "I'm not scoping this" assertion. Forgetting the
+generic is a typecheck error rather than silent unscoped fallthrough.
 
-**Rule of thumb**: if there's a single service identity associated with
-the code path, use `ScopedBroker<S>`. Otherwise, use `TypedBroker`.
+### Typed `ctx.broker` via `TypedContext<S, ...>`
 
-**`ScopedBroker<S>`** — service handler code (the common case):
-- Per-service broker construction (`createScopedBroker<'users'>(...)`)
-- Service handler functions where the service identity is fixed
-- Anywhere you want compile errors for accidentally emitting another
-  service's event, e.g.:
-  ```ts
-  // Inside the 'users' service:
-  broker.emit('orders.placed', payload);  // ✗ TS error — 'users' isn't authorized
-  ```
-
-**`TypedBroker`** — code that legitimately doesn't have a service
-identity:
-- Tests / fixtures
-- REPL or admin tools that act on behalf of multiple services
-- Generic infrastructure helpers, e.g.:
-  ```ts
-  function broadcastSystemEvent(broker: TypedBroker, event: SystemEvent) {
-    return broker.broadcast('system.event', event);
-  }
-  ```
-- One-off scripts that need registry-typed access without claiming a
-  specific identity
-
-If you're unsure, default to `ScopedBroker<S>`. Picking a service
-identity is almost always more correct than not — and if you need to
-emit cross-service from inside a service, that's usually a signal of an
-unintended coupling that the type checker is helpfully flagging.
-
-### Typed `ctx.broker` via `TypedContext` / `ScopedContext<S>`
-
-The same distinction as `TypedBroker` vs `ScopedBroker<S>` applies to
-Context: the two views differ only in whether emit-ownership is
-enforced on `ctx.broker.X(...)`. `TypedContext` types `ctx.broker` as
-`TypedBroker`; `ScopedContext<S>` types it as `ScopedBroker<S>`.
-
-**Rule of thumb**: pick the Context view that matches the broker view
-you'd choose for that code path. If unsure, default to
-`ScopedContext<S>` — picking a service identity is almost always more
-correct than not.
-
-**`ScopedContext<S, TParams, TMeta, TLocals, THeaders>`** — service
-handler code:
-
-```ts
-import type { ScopedContext } from 'typed-moleculer';
-
-function getUser(ctx: ScopedContext<'users', { id: string }>) {
-  ctx.broker.emit('users.created', userObj);     // ✓ users authorized
-  ctx.broker.emit('orders.placed', orderObj);    // ✗ TS error
-}
-```
-
-**`TypedContext<TParams, TMeta, TLocals, THeaders>`** — handlers /
-helpers that don't represent a single service identity:
+`ctx.broker.X(...)` inside handler code is typed only if `ctx` is typed
+as `TypedContext<S, ...>` (rather than Moleculer's plain `Context`).
+The `S` parameter narrows the broker the same way `TypedBroker<S>`
+does:
 
 ```ts
 import type { TypedContext } from 'typed-moleculer';
 
-// Generic helper that runs in any service's context
-function logCtxAndCall(ctx: TypedContext<{ id: string }>) {
-  ctx.broker.call('users.getUser', { id: ctx.params.id });  // strict
+function getUser(ctx: TypedContext<'users', { id: string }>) {
+  ctx.broker.emit('users.created', userObj);  // ✓ users authorized
+  ctx.broker.emit('orders.placed', orderObj); // ✗ TS error
 }
 ```
 
-Both forward Moleculer's full Context generics:
-`<TParams, TMeta, TLocals, THeaders>`. If you previously rolled your
-own typed Context via `Omit<Context, 'broker'> & { broker: ... }`, you
-can drop that and use these directly.
+`TypedContext<any, ...>` is the unscoped form for handlers that
+legitimately don't have a fixed identity (generic helpers, infra code).
 
-Note: typed-moleculer doesn't apply these automatically. If your
-handler signature uses `Context` from moleculer (rather than
-`TypedContext` or `ScopedContext<S>` from typed-moleculer),
-`ctx.broker.X(...)` falls back to Moleculer's loose overloads — see
-[Why not module augmentation?](#why-not-module-augmentation) below.
+`TypedContext<S, TParams, TMeta, TLocals, THeaders>` forwards
+Moleculer's full Context generics. If you previously rolled your own
+typed Context via `Omit<Context, 'broker'> & { broker: ... }`, you can
+drop that and use `TypedContext<S, ...>` directly.
 
 ---
 
@@ -297,13 +307,13 @@ existing ones. The loose overloads always match calls with any string
 + any params, so they shadow stricter additions and the augmentation
 becomes a no-op.
 
-`TypedBroker` and `ScopedBroker<S>` work around this with `Omit` +
-intersection: they remove the loose methods and intersect with strictly
-typed replacements. The same applies to `TypedContext` and
-`ScopedContext<S>` for `ctx.broker.X(...)` strictness in handlers. The
-cost is that you must explicitly type your broker variable or your
-Context — there's no implicit upgrade for code that uses
-`ctx.broker: ServiceBroker` directly.
+`TypedBroker<S>` works around this with `Omit` + intersection: it
+removes the loose methods and intersects with strictly typed
+replacements. The same applies to `TypedContext<S, ...>` for
+`ctx.broker.X(...)` strictness in handlers. The cost is that you must
+explicitly type your broker variable or your Context — there's no
+implicit upgrade for code that uses `ctx.broker: ServiceBroker`
+directly.
 
 ---
 
@@ -369,36 +379,38 @@ index signature.
 
 | Interface | Purpose |
 |---|---|
-| `TypedActions` | Map of `<actionName>` → `{ params; returns }` |
-| `TypedEvents` | Map of `<eventName>` → `{ payload; emittedBy }` |
-| `TypedChannels` | Map of `<channelName>` → `{ payload; publishedBy }` |
+| `TypedActions` | Map of `<actionName>` → `{ params; returns; callableBy? }` |
+| `TypedEvents` | Map of `<eventName>` → `{ payload; emittedBy? }` |
+| `TypedChannels` | Map of `<channelName>` → `{ payload; publishedBy? }` |
+| `TypedDeliverables` | Entries delivered as BOTH event and channel: `{ payload; emittedBy?; publishedBy? }` |
 
 ### Helper types
 
 | Type | Description |
 |---|---|
 | `ActionName` | Union of registered action names |
-| `EventName` | Union of registered event names |
-| `ChannelName` | Union of registered channel names |
+| `EventName` | Union of registered event + deliverable names |
+| `ChannelName` | Union of registered channel + deliverable names |
 | `ActionParams<T>` | Params type for action `T` |
 | `ActionReturns<T>` | Return type for action `T` |
 | `EventPayload<T>` | Payload type for event `T` |
 | `ChannelPayload<T>` | Payload type for channel `T` |
+| `CallableBy<S>` | Union of actions service `S` is authorized to call |
 | `EmittableBy<S>` | Union of events service `S` is authorized to emit |
 | `PublishableBy<S>` | Union of channels service `S` is authorized to publish to |
 
-### Brokers
+### Broker
 
 | Symbol | Description |
 |---|---|
-| `TypedBroker` | Type — strict typing on call/emit/broadcast/publish |
-| `ScopedBroker<S>` | Type — `TypedBroker` + emit-ownership for service `S` |
-| `createTypedBroker(broker)` | Cast a `ServiceBroker` to `TypedBroker` |
-| `createScopedBroker<S>(broker)` | Cast a `ServiceBroker` to `ScopedBroker<S>` |
+| `TypedBroker<S>` | Type — strict typing on call/emit/broadcast/publish, narrowed by service identity `S` |
+| `createTypedBroker<S>(broker)` | Cast a `ServiceBroker` to `TypedBroker<S>` |
+| `TypedContext<S, P, M, L, H>` | Type — `Context` with `broker: TypedBroker<S>` |
 | `EmitOptions` | Options for `emit` / `broadcast` / `broadcastLocal` |
 | `ChannelPublishOptions` | Options for `publish` (channels middleware) |
-| `TypedContext<P,M,L,H>` | Type — `Context` with `broker: TypedBroker` |
-| `ScopedContext<S,P,M,L,H>` | Type — `Context` with `broker: ScopedBroker<S>` |
+
+Pass `<any>` to opt out of scoping (full registry visibility) — useful
+for tests, REPL/admin tools, and generic infrastructure helpers.
 
 ### Decorators
 
@@ -434,8 +446,9 @@ All option types except `CronJobOptions` include an open
 `broker.publish` is provided at runtime by a channels middleware
 (typically [`@moleculer/channels`](https://github.com/moleculerjs/channels)
 or a fork). typed-moleculer types the call signature against
-`TypedChannels` but does not provide the runtime implementation —
-install and configure the channels middleware separately.
+`TypedChannels` + `TypedDeliverables` but does not provide the runtime
+implementation — install and configure the channels middleware
+separately.
 
 By convention `@moleculer/channels` exposes its method as
 `broker.sendToChannel`. To match typed-moleculer's `broker.publish`
@@ -486,6 +499,24 @@ is set). With SWC, enable both `legacyDecorator: true` and
 }
 ```
 
+### Void params and payloads
+
+For actions/events/channels with no params/payload, prefer `void` over
+`undefined`:
+
+```ts
+'users.ping':       { params: void; returns: string };
+'metrics.tick':     { payload: void };
+'system.heartbeat': { payload: void; publishedBy: 'users' };
+```
+
+`broker.call('users.ping')` and `broker.broadcast('metrics.tick')` then
+compile without a dummy positional `undefined` argument. Both `void`
+and `undefined` satisfy the underlying `extends void` check (undefined
+is a subtype of void), so existing registries declared with
+`undefined` keep working — but `void` reads more accurately as "no
+params/payload" rather than "the literal undefined value."
+
 ---
 
 ## Migrating from typed-moleculer 4.x
@@ -495,15 +526,17 @@ is set). With SWC, enable both `legacyDecorator: true` and
 - **Moleculer 0.15+ only.** No 0.14 support.
 - **ESM only.** No CommonJS.
 - **No `TypedServiceBroker<A, E, S, M>` class.** Replaced by
-  `TypedBroker` + `ScopedBroker<S>` types (single string generic for
-  service identity instead of four).
+  `TypedBroker<S>` (single string generic for service identity instead
+  of four). `createTypedBroker<S>(broker)` is the factory.
 - **Per-service action/event union types are no longer needed.**
   Move them into the registry via `declare module 'typed-moleculer'`.
   Action/event/channel ownership lives at the package that defines the
   type, not at each consuming service.
-- **`emittedBy` / `publishedBy` replace per-service `ServiceEvents`
-  unions.** Authorization moves from the calling site to the entry
-  declaration.
+- **Authorization fields (`callableBy` / `emittedBy` / `publishedBy`)
+  are optional and live on the entry, not at the calling site.** Omit
+  to mean "anyone in scope may use this entry"; specify to restrict.
+- **`TypedDeliverables`** lets you declare entries that are both event
+  and channel without textual duplication.
 - **Decorator option types are more permissive.** Custom middleware
   fields (e.g. `restricted`, `stateChange`) pass through via an open
   `[key: string]: unknown` index signature.
@@ -513,8 +546,9 @@ is set). With SWC, enable both `legacyDecorator: true` and
 
 There is no codemod. The migration is mechanical: convert per-service
 union types into registry contributions, replace `TypedServiceBroker`
-construction with `createScopedBroker<S>`, and audit `emittedBy` /
-`publishedBy` for each event/channel.
+construction with `createTypedBroker<S>`, and audit
+`callableBy` / `emittedBy` / `publishedBy` for each action /
+event / channel.
 
 ---
 

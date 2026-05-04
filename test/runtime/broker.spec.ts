@@ -1,24 +1,24 @@
 /**
- * Runtime smoke tests for the broker factories. These are pure type-
- * casting helpers — calling them with a real ServiceBroker should return
- * the same instance with no behavior change.
+ * Runtime smoke test for the broker factory. Pure type-casting helper —
+ * calling it with a real ServiceBroker should return the same instance
+ * with no behavior change.
  */
 
 import { ServiceBroker } from 'moleculer';
 
-import { createScopedBroker } from '../../src/scoped.broker';
 import { createTypedBroker } from '../../src/typed.broker';
 
-describe('broker factories', () => {
-  test('createTypedBroker returns the same broker instance', () => {
+describe('broker factory', () => {
+  test('createTypedBroker returns the same broker instance (scoped)', () => {
     const real = new ServiceBroker({ logLevel: 'fatal' });
-    const typed = createTypedBroker(real);
+    const typed = createTypedBroker<'users'>(real);
     expect(typed).toBe(real);
   });
 
-  test('createScopedBroker returns the same broker instance', () => {
+  test('createTypedBroker returns the same broker instance (unscoped via <any>)', () => {
     const real = new ServiceBroker({ logLevel: 'fatal' });
-    const scoped = createScopedBroker<'users'>(real);
-    expect(scoped).toBe(real);
+    // `any` is the explicit "no scoping" opt-out.
+    const typed = createTypedBroker<any>(real);
+    expect(typed).toBe(real);
   });
 });

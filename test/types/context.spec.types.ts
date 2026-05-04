@@ -1,16 +1,16 @@
 /**
- * Type-level tests for `TypedContext` and `ScopedContext<S>`. Verifies
- * that re-typing `Context.broker` as `TypedBroker` / `ScopedBroker<S>`
- * propagates strictness to `ctx.broker.X(...)` calls in handler code.
+ * Type-level tests for `TypedContext<S, ...>`. Verifies that re-typing
+ * `Context.broker` as `TypedBroker<S>` propagates strictness AND
+ * service-identity scoping to `ctx.broker.X(...)` calls in handler code.
  */
 
-import type { ScopedContext, TypedContext } from 'typed-moleculer';
+import type { TypedContext } from 'typed-moleculer';
 
 // Side-effect — pull registry contributions into scope.
 import './registry.fixtures';
 
-describe('TypedContext — strict typing on ctx.broker', () => {
-  const ctx = null as unknown as TypedContext<{ id: string }>;
+describe('TypedContext<any, ...> — unscoped (full visibility)', () => {
+  const ctx = null as unknown as TypedContext<any, { id: string }>;
 
   test('ctx.broker.call is typed against the registry', async () => {
     const result = await ctx.broker.call('users.getUser', { id: 'u1' });
@@ -25,7 +25,7 @@ describe('TypedContext — strict typing on ctx.broker', () => {
     void ctx.broker.call('does.not.exist', {});
   });
 
-  test('ctx.broker.emit accepts any registered event (non-scoped)', () => {
+  test('ctx.broker.emit accepts any registered event (unscoped)', () => {
     void ctx.broker.emit('users.created', {
       id: 'u1',
       email: 'a@b.c',
@@ -55,8 +55,8 @@ describe('TypedContext — strict typing on ctx.broker', () => {
   });
 });
 
-describe('ScopedContext<S> — emit-ownership on ctx.broker', () => {
-  const ctx = null as unknown as ScopedContext<'users', { name: string }>;
+describe('TypedContext<"users", ...> — scoped to users service', () => {
+  const ctx = null as unknown as TypedContext<'users', { name: string }>;
 
   test('ctx.broker can emit own events', () => {
     void ctx.broker.emit('users.created', {
@@ -75,7 +75,12 @@ describe('ScopedContext<S> — emit-ownership on ctx.broker', () => {
     });
   });
 
-  test('ctx.broker.call is unscoped — any registered action', async () => {
+  test('ctx.broker.call honors callableBy when scoped', async () => {
+    // users IS in users.adminTask callableBy
+    void (await ctx.broker.call('users.adminTask', { taskId: 't1' }));
+  });
+
+  test('ctx.broker.call accepts unrestricted actions', async () => {
     void (await ctx.broker.call('users.getUser', { id: 'u1' }));
     void (await ctx.broker.call('users.ping'));
   });
@@ -93,5 +98,14 @@ describe('ScopedContext<S> — emit-ownership on ctx.broker', () => {
     const name = ctx.params.name;
     const _check: typeof name extends string ? true : false = true;
     void _check;
+  });
+});
+
+describe('TypedContext<"orders", ...> — scoped to orders service', () => {
+  const ctx = null as unknown as TypedContext<'orders', void>;
+
+  test('ctx.broker.call CANNOT call users.adminTask (callableBy excludes orders)', () => {
+    // @ts-expect-error — callableBy='users'|'admin' doesn't include 'orders'
+    void ctx.broker.call('users.adminTask', { taskId: 't1' });
   });
 });

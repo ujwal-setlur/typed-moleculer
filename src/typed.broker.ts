@@ -1,10 +1,25 @@
 /**
- * `TypedBroker` — `ServiceBroker` with `call`/`emit`/`broadcast`/
- * `broadcastLocal`/`publish` strictly typed against the registry.
+ * `TypedBroker<S>` — `ServiceBroker` with `call`/`emit`/`broadcast`/
+ * `broadcastLocal`/`publish` strictly typed against the registry AND
+ * narrowed by service-identity authorization.
  *
- * Non-scoped: any registered action callable, any registered event
- * emittable. For per-service emit-ownership enforcement (only emit events
- * authorized via `emittedBy`), use `ScopedBroker<S>` (./broker.ts).
+ * The single generic `S extends string` is the broker's identity badge
+ * — the service whose perspective the broker takes. Authorization on
+ * each method is checked via the corresponding registry helper:
+ *
+ *   - `broker.call(name)`     → `name extends CallableBy<S>`
+ *   - `broker.emit(name)`     → `name extends EmittableBy<S>`
+ *   - `broker.broadcast(name)`/`broadcastLocal(name)` → same as emit
+ *   - `broker.publish(name)`  → `name extends PublishableBy<S>`
+ *
+ * Entries with their authorization field absent (e.g., no `emittedBy`
+ * declared on an event) are unrestricted — any `S` may use them. So
+ * scoping kicks in only where the registry contributor has expressed
+ * a restriction.
+ *
+ * No default for `S` — consumers must pass an explicit identity. Tests
+ * and unscoped tooling can pass `<any>` deliberately to opt out, which
+ * makes the choice greppable.
  *
  * Why an `Omit` + intersection rather than module augmentation:
  * moleculer 0.15's `ServiceBroker` declares loose overloads
@@ -22,10 +37,13 @@ import type {
   ActionName,
   ActionParams,
   ActionReturns,
+  CallableBy,
   ChannelName,
   ChannelPayload,
+  EmittableBy,
   EventName,
-  EventPayload
+  EventPayload,
+  PublishableBy
 } from './registry';
 import type { ChannelPublishOptions } from './types/channel.publish';
 
@@ -69,28 +87,34 @@ type ChannelArgs<T extends ChannelName> =
 
 /**
  * `ServiceBroker` with call/emit/broadcast/broadcastLocal/publish typed
- * strictly against the registry. No emit-ownership scoping — any
- * registered name accepted (subject to compilation-unit visibility).
+ * strictly against the registry and narrowed by the service identity
+ * `S`. Pass `<any>` to opt out of scoping (e.g., in tests) — the
+ * `any extends X` conditional resolves to truthy for every entry, so
+ * `TypedBroker<any>` is effectively unscoped while still being
+ * explicit at the call site.
  */
-export type TypedBroker = Omit<
+export type TypedBroker<S extends string> = Omit<
   ServiceBroker,
   'call' | 'emit' | 'broadcast' | 'broadcastLocal' | 'publish'
 > & {
-  call<T extends ActionName>(
+  call<T extends CallableBy<S>>(
     name: T,
     ...args: CallArgs<T>
   ): Promise<ActionReturns<T>>;
 
-  emit<T extends EventName>(name: T, ...args: EmitArgs<T>): Promise<void>;
+  emit<T extends EmittableBy<S>>(name: T, ...args: EmitArgs<T>): Promise<void>;
 
-  broadcast<T extends EventName>(name: T, ...args: EmitArgs<T>): Promise<void>;
-
-  broadcastLocal<T extends EventName>(
+  broadcast<T extends EmittableBy<S>>(
     name: T,
     ...args: EmitArgs<T>
   ): Promise<void>;
 
-  publish<T extends ChannelName>(
+  broadcastLocal<T extends EmittableBy<S>>(
+    name: T,
+    ...args: EmitArgs<T>
+  ): Promise<void>;
+
+  publish<T extends PublishableBy<S>>(
     name: T,
     ...args: ChannelArgs<T>
   ): Promise<void>;
@@ -98,9 +122,11 @@ export type TypedBroker = Omit<
 
 /**
  * Type-narrowing factory. Returns the same broker instance, just typed
- * as `TypedBroker`. Runtime is unchanged — moleculer 0.15's
+ * as `TypedBroker<S>`. Runtime is unchanged — moleculer 0.15's
  * `ServiceBroker` (with the channels middleware injecting `publish`).
  */
-export function createTypedBroker(broker: ServiceBroker): TypedBroker {
-  return broker as unknown as TypedBroker;
+export function createTypedBroker<S extends string>(
+  broker: ServiceBroker
+): TypedBroker<S> {
+  return broker as unknown as TypedBroker<S>;
 }

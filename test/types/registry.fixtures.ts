@@ -44,11 +44,27 @@ export interface NotificationPayload {
   message: string;
 }
 
+export interface SystemDigestPayload {
+  digestId: string;
+  events: number;
+}
+
+export interface AdminTaskParams {
+  taskId: string;
+}
+
 declare module 'typed-moleculer' {
-  // Actions — globally callable; visibility scoped by import graph.
+  // Actions — visibility scoped by import graph; callableBy optional.
   interface TypedActions {
+    // Unrestricted: no callableBy → any service in scope may call.
     'users.getUser': { params: GetUserParams; returns: User };
     'users.ping': { params: void; returns: string };
+    // Restricted via callableBy.
+    'users.adminTask': {
+      params: AdminTaskParams;
+      returns: void;
+      callableBy: 'users' | 'admin';
+    };
   }
 
   // Events — emit-ownership via emittedBy.
@@ -78,6 +94,10 @@ declare module 'typed-moleculer' {
       payload: void;
       emittedBy: 'users' | 'orders' | 'inventory';
     };
+    // Unrestricted event: no emittedBy → any service in scope may emit.
+    'metrics.tick': {
+      payload: void;
+    };
   }
 
   // Channels — publish-ownership via publishedBy.
@@ -95,6 +115,22 @@ declare module 'typed-moleculer' {
     'system.heartbeat': {
       payload: void;
       publishedBy: 'users' | 'orders';
+    };
+    // Unrestricted channel: no publishedBy → any service in scope may publish.
+    'metrics.report': {
+      payload: { metric: string; value: number };
+    };
+  }
+
+  // Deliverables — entries delivered as BOTH event and channel
+  // (durability-fallback pattern: try publish, catch and emit). Single
+  // declaration contributes to TypedEvents and TypedChannels at the
+  // type level.
+  interface TypedDeliverables {
+    'system.digest': {
+      payload: SystemDigestPayload;
+      emittedBy: 'orders' | 'inventory';
+      publishedBy: 'orders' | 'inventory';
     };
   }
 }
