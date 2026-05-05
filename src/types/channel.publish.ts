@@ -20,9 +20,25 @@ export interface ChannelPublishOptions {
   priority?: number;
   /** AMQP: request identifier. */
   correlationId?: string;
-  /** Calling Context. The channels middleware uses this for tracing,
-   *  meta serialization, and channelName injection. */
-  ctx?: Context;
+  /**
+   * Calling Context. The channels middleware uses this for tracing,
+   * meta serialization, and channelName injection.
+   *
+   * `broker` and the `call`/`emit`/`broadcast` methods are widened to
+   * `unknown` so a `TypedContext<S, ...>` (whose broker is
+   * `TypedBroker<S>` and whose call/emit/broadcast carry strict registry
+   * overloads not assignable to moleculer's loose ones) can still be
+   * passed through here. The runtime channels middleware reads only
+   * `meta`, `requestID`, `id`, `tracing`, `level`, `service.fullName`,
+   * `currentChannelName`, and `headers` from this object — broker shape
+   * and the call/emit/broadcast signatures are never accessed.
+   */
+  ctx?: Omit<Context, 'broker' | 'call' | 'emit' | 'broadcast'> & {
+    broker: unknown;
+    call: unknown;
+    emit: unknown;
+    broadcast: unknown;
+  };
   /** Application-specific headers carried with the message. */
   headers?: Record<string, unknown>;
   /** AMQP: routing key. If publishing to a queue (no exchange), set
