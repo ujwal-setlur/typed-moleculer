@@ -13,7 +13,7 @@
  *       ctx.broker.call('users.getUser', ctx.params);
  *       ctx.broker.emit('users.created', userObj);  // scoped — must
  *                                                    // include 'users'
- *                                                    // in emittedBy
+ *                                                    // in emittableBy
  *     }
  *
  * No default for `S` — pass `<any>` deliberately to opt out of

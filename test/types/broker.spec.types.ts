@@ -2,7 +2,7 @@
  * Type-level tests for `TypedBroker<S>`. Verifies:
  *   - Strict typing on call/emit/broadcast/publish against the registry
  *     (rejects unknown names + wrong payload shapes).
- *   - Service-identity narrowing via callableBy / emittedBy / publishedBy.
+ *   - Service-identity narrowing via callableBy / emittableBy / publishableBy.
  *   - Optional authorization fields fall through to "anyone may use" for
  *     entries that omit them.
  *   - `<any>` opts out of scoping (full visibility).
@@ -162,17 +162,17 @@ describe('TypedBroker<"users"> — scoped to users service', () => {
     void broker.emit('users.deleted', { id: 'u1' });
   });
 
-  test('emit: users CANNOT emit inventory.adjusted (not in emittedBy)', () => {
-    // @ts-expect-error — 'inventory.adjusted' emittedBy excludes 'users'
+  test('emit: users CANNOT emit inventory.adjusted (not in emittableBy)', () => {
+    // @ts-expect-error — 'inventory.adjusted' emittableBy excludes 'users'
     void broker.emit('inventory.adjusted', { sku: 'X', delta: 1 });
   });
 
   test('emit: users CANNOT emit orders.placed', () => {
-    // @ts-expect-error — orders.placed emittedBy='orders'
+    // @ts-expect-error — orders.placed emittableBy='orders'
     void broker.emit('orders.placed', { id: 'o1', userId: 'u1', total: 1 });
   });
 
-  test('emit: users can emit unrestricted events (metrics.tick has no emittedBy)', () => {
+  test('emit: users can emit unrestricted events (metrics.tick has no emittableBy)', () => {
     void broker.emit('metrics.tick');
   });
 
@@ -185,7 +185,7 @@ describe('TypedBroker<"users"> — scoped to users service', () => {
     void broker.publish('notifications.send', { userId: 'u1', message: 'hi' });
   });
 
-  test('publish: users can publish unrestricted channels (metrics.report has no publishedBy)', () => {
+  test('publish: users can publish unrestricted channels (metrics.report has no publishableBy)', () => {
     void broker.publish('metrics.report', { metric: 'm', value: 1 });
   });
 
@@ -196,9 +196,9 @@ describe('TypedBroker<"users"> — scoped to users service', () => {
   });
 
   test('TypedDeliverables: users CANNOT emit/publish system.digest (not authorized)', () => {
-    // @ts-expect-error — system.digest emittedBy='orders'|'inventory'
+    // @ts-expect-error — system.digest emittableBy='orders'|'inventory'
     void broker.emit('system.digest', { digestId: 'd1', events: 1 });
-    // @ts-expect-error — system.digest publishedBy='orders'|'inventory'
+    // @ts-expect-error — system.digest publishableBy='orders'|'inventory'
     void broker.publish('system.digest', { digestId: 'd1', events: 1 });
   });
 
@@ -222,7 +222,7 @@ describe('TypedBroker<"orders"> — scoped to orders service', () => {
   });
 
   test('emit: orders CANNOT emit users.created', () => {
-    // @ts-expect-error — emittedBy='users'
+    // @ts-expect-error — emittableBy='users'
     void broker.emit('users.created', { id: 'u1', email: 'a@b.c', name: 'A' });
   });
 
@@ -241,7 +241,7 @@ describe('TypedBroker<"inventory"> — scoped to inventory service', () => {
   });
 
   test('publish: inventory CANNOT publish to notifications.send', () => {
-    // @ts-expect-error — notifications.send publishedBy excludes 'inventory'
+    // @ts-expect-error — notifications.send publishableBy excludes 'inventory'
     void broker.publish('notifications.send', { userId: 'u1', message: 'hi' });
   });
 

@@ -12,7 +12,7 @@
  *   - `broker.broadcast(name)`/`broadcastLocal(name)` → same as emit
  *   - `broker.publish(name)`  → `name extends PublishableBy<S>`
  *
- * Entries with their authorization field absent (e.g., no `emittedBy`
+ * Entries with their authorization field absent (e.g., no `emittableBy`
  * declared on an event) are unrestricted — any `S` may use them. So
  * scoping kicks in only where the registry contributor has expressed
  * a restriction.

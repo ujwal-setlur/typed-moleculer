@@ -9,7 +9,7 @@
  * One typed broker:
  *   - `TypedBroker<S>` — strict typing on call/emit/broadcast/publish,
  *     narrowed by service-identity `S` via the optional `callableBy` /
- *     `emittedBy` / `publishedBy` registry fields. Pass `<any>` to opt
+ *     `emittableBy` / `publishableBy` registry fields. Pass `<any>` to opt
  *     out of scoping deliberately (tests, throwaway code).
  *
  * IMPORTANT: typed-moleculer does NOT augment moleculer's `ServiceBroker`

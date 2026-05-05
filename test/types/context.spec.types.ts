@@ -67,7 +67,7 @@ describe('TypedContext<"users", ...> — scoped to users service', () => {
   });
 
   test('ctx.broker CANNOT emit other services events', () => {
-    // @ts-expect-error — orders.placed emittedBy='orders'
+    // @ts-expect-error — orders.placed emittableBy='orders'
     void ctx.broker.emit('orders.placed', {
       id: 'o1',
       userId: 'u1',
@@ -85,8 +85,8 @@ describe('TypedContext<"users", ...> — scoped to users service', () => {
     void (await ctx.broker.call('users.ping'));
   });
 
-  test('ctx.broker.publish enforces publishedBy', () => {
-    // users IS in audit.event's publishedBy union
+  test('ctx.broker.publish enforces publishableBy', () => {
+    // users IS in audit.event's publishableBy union
     void ctx.broker.publish('audit.event', {
       service: 'users',
       action: 'x',

@@ -67,56 +67,56 @@ declare module 'typed-moleculer' {
     };
   }
 
-  // Events — emit-ownership via emittedBy.
+  // Events — emit-ownership via emittableBy.
   interface TypedEvents {
     'users.created': {
       payload: User;
-      emittedBy: 'users';
+      emittableBy: 'users';
     };
     'users.deleted': {
       payload: { id: string };
-      emittedBy: 'users';
+      emittableBy: 'users';
     };
     'inventory.adjusted': {
       payload: InventoryAdjustedPayload;
       // Multi-emitter: orders adjusts on placement, returns adjusts on
       // refund, inventory itself adjusts on direct admin actions.
-      emittedBy: 'orders' | 'returns' | 'inventory';
+      emittableBy: 'orders' | 'returns' | 'inventory';
     };
     'orders.placed': {
       payload: Order;
-      emittedBy: 'orders';
+      emittableBy: 'orders';
     };
     // Void-payload event: parity with moleculer 0.14's `broadcast(name)`
     // ergonomic. `cache.invalidate` is a typical protocol-style event:
     // notifies listeners that something changed; carries no data.
     'cache.invalidate': {
       payload: void;
-      emittedBy: 'users' | 'orders' | 'inventory';
+      emittableBy: 'users' | 'orders' | 'inventory';
     };
-    // Unrestricted event: no emittedBy → any service in scope may emit.
+    // Unrestricted event: no emittableBy → any service in scope may emit.
     'metrics.tick': {
       payload: void;
     };
   }
 
-  // Channels — publish-ownership via publishedBy.
+  // Channels — publish-ownership via publishableBy.
   interface TypedChannels {
     'audit.event': {
       payload: AuditEventPayload;
       // Most services log audit events.
-      publishedBy: 'users' | 'orders' | 'inventory';
+      publishableBy: 'users' | 'orders' | 'inventory';
     };
     'notifications.send': {
       payload: NotificationPayload;
-      publishedBy: 'orders' | 'users';
+      publishableBy: 'orders' | 'users';
     };
     // Void-payload channel: signal-only message (e.g. heartbeat).
     'system.heartbeat': {
       payload: void;
-      publishedBy: 'users' | 'orders';
+      publishableBy: 'users' | 'orders';
     };
-    // Unrestricted channel: no publishedBy → any service in scope may publish.
+    // Unrestricted channel: no publishableBy → any service in scope may publish.
     'metrics.report': {
       payload: { metric: string; value: number };
     };
@@ -129,8 +129,8 @@ declare module 'typed-moleculer' {
   interface TypedDeliverables {
     'system.digest': {
       payload: SystemDigestPayload;
-      emittedBy: 'orders' | 'inventory';
-      publishedBy: 'orders' | 'inventory';
+      emittableBy: 'orders' | 'inventory';
+      publishableBy: 'orders' | 'inventory';
     };
   }
 }

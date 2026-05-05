@@ -14,20 +14,20 @@
  *         };
  *       }
  *       interface TypedEvents {
- *         'users.created': { payload: User; emittedBy: 'users' };
- *         // emittedBy optional: omit it for events anyone may emit.
+ *         'users.created': { payload: User; emittableBy: 'users' };
+ *         // emittableBy optional: omit it for events anyone may emit.
  *         'metrics.tick': { payload: void };
  *       }
  *       interface TypedChannels {
- *         'orders.placed': { payload: Order; publishedBy: 'orders' };
+ *         'orders.placed': { payload: Order; publishableBy: 'orders' };
  *       }
  *       // For names delivered as BOTH event and channel (durability-
  *       // fallback pattern: try publish, catch and emit):
  *       interface TypedDeliverables {
  *         'observe-router.message': {
  *           payload: CommonMessage;
- *           emittedBy: 'observe-router' | 'transformer';
- *           publishedBy: 'observe-router' | 'transformer';
+ *           emittableBy: 'observe-router' | 'transformer';
+ *           publishableBy: 'observe-router' | 'transformer';
  *         };
  *       }
  *     }
@@ -41,18 +41,18 @@
  * Each entry's shape (authorization fields are all OPTIONAL — omit to
  * mean "anyone in scope may call/emit/publish"):
  *   - Action      : `{ params: P; returns: R; callableBy?: S | ... }`
- *   - Event       : `{ payload: P; emittedBy?: S | ... }`
- *   - Channel     : `{ payload: P; publishedBy?: S | ... }`
- *   - Deliverable : `{ payload: P; emittedBy?: ...; publishedBy?: ... }`
+ *   - Event       : `{ payload: P; emittableBy?: S | ... }`
+ *   - Channel     : `{ payload: P; publishableBy?: S | ... }`
+ *   - Deliverable : `{ payload: P; emittableBy?: ...; publishableBy?: ... }`
  *
- * `callableBy` / `emittedBy` / `publishedBy` are string-literal unions
+ * `callableBy` / `emittableBy` / `publishableBy` are string-literal unions
  * of authorized service names. When set, only the listed services may
  * call/emit/publish at compile time. When absent, the entry is
  * unrestricted (any importer with the entry in scope may use it).
  *
  * `TypedDeliverables` is sugar for declaring the same name in BOTH
- * `TypedEvents` (with `emittedBy`) AND `TypedChannels` (with
- * `publishedBy`) without textual duplication. `EventName`/`ChannelName`
+ * `TypedEvents` (with `emittableBy`) AND `TypedChannels` (with
+ * `publishableBy`) without textual duplication. `EventName`/`ChannelName`
  * traverse both `Typed{Events,Channels}` and `TypedDeliverables`, so
  * `broker.emit` and `broker.publish` see the deliverable name on their
  * respective method only — the per-method narrowing that catches
@@ -145,11 +145,11 @@ export type CallableBy<S extends string> = {
 
 /**
  * Events that service `S` is authorized to emit. Same fall-through
- * semantic as `CallableBy<S>`: entries without `emittedBy` are
+ * semantic as `CallableBy<S>`: entries without `emittableBy` are
  * unrestricted.
  */
 export type EmittableBy<S extends string> = {
-  [E in EventName]: _EventEntry<E> extends { emittedBy: infer Em }
+  [E in EventName]: _EventEntry<E> extends { emittableBy: infer Em }
     ? S extends Em
       ? E
       : never
@@ -159,10 +159,10 @@ export type EmittableBy<S extends string> = {
 /**
  * Channels that service `S` is authorized to publish to. Same
  * fall-through semantic as `CallableBy<S>` / `EmittableBy<S>`:
- * entries without `publishedBy` are unrestricted.
+ * entries without `publishableBy` are unrestricted.
  */
 export type PublishableBy<S extends string> = {
-  [C in ChannelName]: _ChannelEntry<C> extends { publishedBy: infer Pb }
+  [C in ChannelName]: _ChannelEntry<C> extends { publishableBy: infer Pb }
     ? S extends Pb
       ? C
       : never

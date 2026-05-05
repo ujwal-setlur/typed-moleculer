@@ -89,7 +89,7 @@ describe('registry helper types', () => {
     });
   });
 
-  describe('EmittableBy<S> — emit authorization (emittedBy optional)', () => {
+  describe('EmittableBy<S> — emit authorization (emittableBy optional)', () => {
     test('users can emit own events + cache.invalidate + unrestricted metrics.tick', () => {
       type UsersEmits = EmittableBy<'users'>;
       expectTypeOf<UsersEmits>().toEqualTypeOf<
@@ -131,7 +131,7 @@ describe('registry helper types', () => {
     });
   });
 
-  describe('PublishableBy<S> — publish authorization (publishedBy optional)', () => {
+  describe('PublishableBy<S> — publish authorization (publishableBy optional)', () => {
     test('users can publish to authorized channels + unrestricted metrics.report', () => {
       type UsersPubs = PublishableBy<'users'>;
       expectTypeOf<UsersPubs>().toEqualTypeOf<

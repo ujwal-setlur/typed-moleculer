@@ -15,7 +15,7 @@ TypeScript and surface as runtime failures.
 - A **`TypedBroker<S>`** view with strict typing on `call` / `emit` /
   `broadcast` / `broadcastLocal` / `publish` against the registry,
   narrowed by service-identity authorization (`callableBy` /
-  `emittedBy` / `publishedBy`).
+  `emittableBy` / `publishableBy`).
 - **`TypedDeliverables`** — sugar for entries delivered as both event
   AND channel (for the durability-fallback pattern: try `publish`,
   catch and `emit`).
@@ -95,16 +95,16 @@ declare module 'typed-moleculer' {
   }
 
   interface TypedEvents {
-    'users.created': { payload: User; emittedBy: 'users' };
-    'users.deleted': { payload: { id: string }; emittedBy: 'users' };
-    // No emittedBy — anyone may emit.
+    'users.created': { payload: User; emittableBy: 'users' };
+    'users.deleted': { payload: { id: string }; emittableBy: 'users' };
+    // No emittableBy — anyone may emit.
     'metrics.tick': { payload: void };
   }
 
   interface TypedChannels {
     'audit.event': {
       payload: { service: string; action: string; at: number };
-      publishedBy: 'users' | 'orders' | 'inventory';
+      publishableBy: 'users' | 'orders' | 'inventory';
     };
   }
 }
@@ -136,28 +136,28 @@ in scope may use this entry."
 };
 
 // Event — strict on payload + authorized emitters
-'users.created': { payload: User; emittedBy: 'users' };
+'users.created': { payload: User; emittableBy: 'users' };
 
 // Multi-emitter event
 'inventory.adjusted': {
   payload: InventoryAdjusted;
-  emittedBy: 'orders' | 'returns' | 'inventory';
+  emittableBy: 'orders' | 'returns' | 'inventory';
 };
 
-// Event without emittedBy — unrestricted
+// Event without emittableBy — unrestricted
 'metrics.tick': { payload: void };
 
 // Channel — strict on payload + authorized publishers
 'audit.event': {
   payload: AuditEvent;
-  publishedBy: 'users' | 'orders';
+  publishableBy: 'users' | 'orders';
 };
 
-// Channel without publishedBy — unrestricted
+// Channel without publishableBy — unrestricted
 'metrics.report': { payload: { metric: string; value: number } };
 ```
 
-`callableBy` / `emittedBy` / `publishedBy` are string-literal unions of
+`callableBy` / `emittableBy` / `publishableBy` are string-literal unions of
 the service names authorized to call/emit/publish. The owning module
 is the single source of truth for both shape and authorization.
 
@@ -169,16 +169,16 @@ falls back to `broker.emit`. The receiver listens on both `@Channel`
 and `@Event` for the same name.
 
 Without a separate registry, you'd declare the entry twice — once in
-`TypedEvents` (with `emittedBy`) and once in `TypedChannels` (with
-`publishedBy`). `TypedDeliverables` lets you write it once:
+`TypedEvents` (with `emittableBy`) and once in `TypedChannels` (with
+`publishableBy`). `TypedDeliverables` lets you write it once:
 
 ```ts
 declare module 'typed-moleculer' {
   interface TypedDeliverables {
     'orders.placed': {
       payload: Order;
-      emittedBy: 'orders' | 'returns';
-      publishedBy: 'orders' | 'returns';
+      emittableBy: 'orders' | 'returns';
+      publishableBy: 'orders' | 'returns';
     };
   }
 }
@@ -190,7 +190,7 @@ declare module 'typed-moleculer' {
 publish-only entry declared in `TypedChannels` is still rejected on
 `emit`).
 
-The `emittedBy` / `publishedBy` lists can differ if the asymmetry is
+The `emittableBy` / `publishableBy` lists can differ if the asymmetry is
 real; in typical durability-fallback usage they're the same.
 
 ---
@@ -213,8 +213,8 @@ const user = await broker.call('users.getUser', { id: 'u1' });
 //    ^? User
 
 broker.emit('users.created', userObj);    // ✓ users authorized
-broker.emit('orders.placed', orderObj);   // ✗ TS error: emittedBy='orders' excludes 'users'
-broker.publish('audit.event', auditObj);  // ✓ users in publishedBy
+broker.emit('orders.placed', orderObj);   // ✗ TS error: emittableBy='orders' excludes 'users'
+broker.publish('audit.event', auditObj);  // ✓ users in publishableBy
 broker.call('users.adminTask', task);     // ✓ users in callableBy
 broker.call('does.not.exist', {});        // ✗ TS error: unknown action
 ```
@@ -380,9 +380,9 @@ index signature.
 | Interface | Purpose |
 |---|---|
 | `TypedActions` | Map of `<actionName>` → `{ params; returns; callableBy? }` |
-| `TypedEvents` | Map of `<eventName>` → `{ payload; emittedBy? }` |
-| `TypedChannels` | Map of `<channelName>` → `{ payload; publishedBy? }` |
-| `TypedDeliverables` | Entries delivered as BOTH event and channel: `{ payload; emittedBy?; publishedBy? }` |
+| `TypedEvents` | Map of `<eventName>` → `{ payload; emittableBy? }` |
+| `TypedChannels` | Map of `<channelName>` → `{ payload; publishableBy? }` |
+| `TypedDeliverables` | Entries delivered as BOTH event and channel: `{ payload; emittableBy?; publishableBy? }` |
 
 ### Helper types
 
@@ -507,7 +507,7 @@ For actions/events/channels with no params/payload, prefer `void` over
 ```ts
 'users.ping':       { params: void; returns: string };
 'metrics.tick':     { payload: void };
-'system.heartbeat': { payload: void; publishedBy: 'users' };
+'system.heartbeat': { payload: void; publishableBy: 'users' };
 ```
 
 `broker.call('users.ping')` and `broker.broadcast('metrics.tick')` then
@@ -532,7 +532,7 @@ params/payload" rather than "the literal undefined value."
   Move them into the registry via `declare module 'typed-moleculer'`.
   Action/event/channel ownership lives at the package that defines the
   type, not at each consuming service.
-- **Authorization fields (`callableBy` / `emittedBy` / `publishedBy`)
+- **Authorization fields (`callableBy` / `emittableBy` / `publishableBy`)
   are optional and live on the entry, not at the calling site.** Omit
   to mean "anyone in scope may use this entry"; specify to restrict.
 - **`TypedDeliverables`** lets you declare entries that are both event
@@ -547,7 +547,7 @@ params/payload" rather than "the literal undefined value."
 There is no codemod. The migration is mechanical: convert per-service
 union types into registry contributions, replace `TypedServiceBroker`
 construction with `createTypedBroker<S>`, and audit
-`callableBy` / `emittedBy` / `publishedBy` for each action /
+`callableBy` / `emittableBy` / `publishableBy` for each action /
 event / channel.
 
 ---
